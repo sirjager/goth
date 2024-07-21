@@ -1,0 +1,18 @@
+# build output
+dist/
+vendor
+
+**/.trash/
+.cache/
+
+# environment variables
+.env
+.env.production
+*.env.*
+*.envrc
+!example.env
+!defaults.env
+
+tmp/
+tmp-*
+*.log

@@ -1,0 +1,121 @@
+---
+version: "3"
+
+dotenv:
+  - defaults.env
+  - overrides.env
+
+interval: 500ms
+
+vars:
+  REPOSITORY: goth
+  USER_REPO: "repository/users/migrations"
+  POSTGRES_MIGRATIONS: "repository/postgres/migrations"
+  STUBS_DIR: rpc
+  PROTO_DIR: proto
+  STATIK_DIR: .
+  DOCS_SWAGGER: docs
+
+tasks:
+  sqlc:
+    desc: sqlc generates fully type-safe idiomatic Go code from SQL
+    cmds:
+      - rm -f ./repository/users/sqlc/*.sql_gen.go
+      - sqlc generate
+      - task: migration-build
+
+  swag:
+    desc: Generate swagger docs
+    cmds:
+      - swag fmt
+      - swag init --outputTypes go,json
+
+  tidy:
+    desc: run go mod tidy
+    cmds:
+      - rm -f ./go.sum
+      - go mod tidy
+      # - go mod vendor
+
+  test:
+    desc: run go test
+    cmds:
+      - go clean -testcache
+      - go test -v -cover -short ./...
+
+  lint:
+    desc: lint the code
+    cmds:
+      - golint ./...
+
+
+  postgres-migration-new:
+    desc: create new migration
+    summary: Use task new-migration -- "create table users"
+    cmd: migrate create -ext sql -dir {{.POSTGRES_MIGRATIONS}} -seq {{.CLI_ARGS}}
+
+  postgres-migration-drop:
+    desc: drop everything inside database
+    cmd: |
+      migrate \
+      -source file://{{.POSTGRES_MIGRATIONS}} \
+      -database {{.POSTGRES_URL}} -verbose drop -f
+
+  postgres-migration-up:
+    desc: run migrations up
+    cmd: |
+      migrate \
+      -source file://{{.POSTGRES_MIGRATIONS}} \
+      -database {{.POSTGRES_URL}} -verbose up
+
+  postgres-migration-down:
+    desc: run migrations down
+    cmd: |
+      migrate \
+      -source file://{{.POSTGRES_MIGRATIONS}} \
+      -database {{.POSTGRES_URL}} -verbose down -all
+
+  migration-build:
+    desc: build migration files as binary code
+    cmds:
+      - cd {{.USER_REPO}} && go-bindata -pkg migrations .
+
+  up:
+    desc: run containers
+    preconditions:
+      - test -f docker-compose.yaml
+    cmd: docker compose up -d
+
+  down:
+    desc: stop containers
+    preconditions:
+      - test -f docker-compose.yaml
+    cmd: docker compose down
+
+  restart:
+    desc: run containers
+    cmds:
+      - task: down
+      - task: up
+
+  pull:
+    desc: pull latest images
+    cmd: docker compose pull
+
+  docker-remove:
+    desc: containers remove
+    cmd: docker compose rm -f
+
+  docker-build:
+    desc: build docker image
+    cmd: docker compose build
+
+  docker-image:
+    desc: build docker image
+    cmd: build --pull --rm -f "Dockerfile" -t {{.SERVICE_NAME}}:latest "."
+
+  mock:
+    desc: Mock for tests
+    cmds:
+      - mockgen -package mockpostgresrepo -destination repository/postgres/mock/repository.go github.com/sirjager/{{.REPOSITORY}}/repository Repository 
+
