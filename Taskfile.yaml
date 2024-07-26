@@ -10,7 +10,7 @@ interval: 500ms
 vars:
   REPOSITORY: goth
   USER_REPO: "repository/users/migrations"
-  POSTGRES_MIGRATIONS: "repository/postgres/migrations"
+  POSTGRES_MIGRATIONS: "repository/users/migrations"
   STUBS_DIR: rpc
   PROTO_DIR: proto
   STATIK_DIR: .

@@ -3,12 +3,10 @@ package mw
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 
 	"github.com/sirjager/goth/logger"
@@ -79,61 +77,6 @@ func ChiCustomLogger(logr zerolog.Logger, config logger.Config, next http.Handle
 			event.Msg(coloredIcon)
 		}
 	})
-}
-
-func GinLogger(logr zerolog.Logger, config logger.Config) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now() // Start timer
-		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
-
-		// Process request
-		c.Next()
-
-		// Fill the params
-		req := gin.LogFormatterParams{}
-		req.TimeStamp = time.Now()
-		req.Latency = req.TimeStamp.Sub(start)
-		if req.Latency > time.Minute {
-			req.Latency = req.Latency.Truncate(time.Second)
-		}
-
-		req.ClientIP = c.ClientIP()
-		req.Method = c.Request.Method
-		req.StatusCode = c.Writer.Status()
-		req.ErrorMessage = c.Errors.ByType(gin.ErrorTypePrivate).String()
-		req.BodySize = c.Writer.Size()
-		if raw != "" {
-			path = path + "?" + raw
-		}
-		req.Path = path
-
-		// Log using the params
-		event := logr.Info()
-		if req.StatusCode >= 400 && req.StatusCode < 500 {
-			event = logr.Warn().Err(errors.New(req.ErrorMessage))
-		} else if req.StatusCode >= 500 {
-			event = logr.Error().Err(errors.New(req.ErrorMessage))
-		}
-
-		shortenedPath := shortenPath(req.Path, 20)
-		icon := getIcon(req.StatusCode)
-		coloredIcon := getColoredIcon(req.StatusCode)
-
-		event.
-			Str("method", req.Method).
-			Str("path", shortenedPath).
-			Dur("latency", req.Latency).
-			Int("code", req.StatusCode).
-			Int("size", req.BodySize).
-			Str("client", req.ClientIP)
-
-		if config.Logfile != "" {
-			event.Msg(icon)
-		} else {
-			event.Msg(coloredIcon)
-		}
-	}
 }
 
 func getIcon(code int) string {

@@ -41,6 +41,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout/{provider}": {
+            "get": {
+                "description": "Logout from a provider",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Provider Name",
+                        "name": "provider",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/{provider}": {
             "get": {
                 "description": "Authenticates a user with a specified provider",
@@ -68,28 +90,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/auth/{provider}/logout": {
-            "get": {
-                "description": "Logout from a provider",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Logout",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Provider Name",
-                        "name": "provider",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
             }
         },
         "/health": {
@@ -136,14 +136,57 @@ const docTemplate = `{
         },
         "/users": {
             "get": {
-                "description": "Get User",
+                "description": "Fetch multiple users",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Resources"
                 ],
-                "summary": "Get User",
+                "summary": "Multiple Users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number: Default 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Per Page: Default 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Users Response",
+                        "schema": {
+                            "$ref": "#/definitions/UsersResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{identity}": {
+            "get": {
+                "description": "Fetch specific user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Single User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identity can either be email or id",
+                        "name": "identity",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "User Response",
@@ -216,6 +259,17 @@ const docTemplate = `{
             "properties": {
                 "user": {
                     "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "UsersResponse": {
+            "type": "object",
+            "properties": {
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/User"
+                    }
                 }
             }
         },

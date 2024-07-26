@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const userCreate = `-- name: UserCreate :one
@@ -17,27 +18,29 @@ INSERT INTO "users" (
   id, email, verified, blocked,
   provider,google_id,
   name,first_name,last_name,nick_name,
-  avatar_url,location,
+  avatar_url,picture_url,location,master,
   created_at,updated_at
 ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, location, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at
 `
 
 type UserCreateParams struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Verified  bool      `json:"verified"`
-	Blocked   bool      `json:"blocked"`
-	Provider  string    `json:"provider"`
-	GoogleID  string    `json:"google_id"`
-	Name      string    `json:"name"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	NickName  string    `json:"nick_name"`
-	AvatarUrl string    `json:"avatar_url"`
-	Location  string    `json:"location"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         uuid.UUID `json:"id"`
+	Email      string    `json:"email"`
+	Verified   bool      `json:"verified"`
+	Blocked    bool      `json:"blocked"`
+	Provider   string    `json:"provider"`
+	GoogleID   string    `json:"google_id"`
+	Name       string    `json:"name"`
+	FirstName  string    `json:"first_name"`
+	LastName   string    `json:"last_name"`
+	NickName   string    `json:"nick_name"`
+	AvatarUrl  string    `json:"avatar_url"`
+	PictureUrl string    `json:"picture_url"`
+	Location   string    `json:"location"`
+	Master     bool      `json:"master"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, error) {
@@ -53,7 +56,9 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 		arg.LastName,
 		arg.NickName,
 		arg.AvatarUrl,
+		arg.PictureUrl,
 		arg.Location,
+		arg.Master,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -70,7 +75,10 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 		&i.LastName,
 		&i.NickName,
 		&i.AvatarUrl,
+		&i.PictureUrl,
 		&i.Location,
+		&i.Roles,
+		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -78,7 +86,7 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 }
 
 const userDelete = `-- name: UserDelete :one
-delete from "users" where id = $1 RETURNING id
+DELETE from "users" WHERE id = $1 RETURNING id
 `
 
 func (q *Queries) UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
@@ -88,7 +96,7 @@ func (q *Queries) UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, erro
 }
 
 const userRead = `-- name: UserRead :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, location, created_at, updated_at from "users" where id = $1 limit 1
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" where id = $1 limit 1
 `
 
 func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
@@ -106,7 +114,10 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.LastName,
 		&i.NickName,
 		&i.AvatarUrl,
+		&i.PictureUrl,
 		&i.Location,
+		&i.Roles,
+		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -114,7 +125,7 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const userReadByEmail = `-- name: UserReadByEmail :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, location, created_at, updated_at from "users" where email = $1 limit 1
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" where email = $1 limit 1
 `
 
 func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, error) {
@@ -132,9 +143,139 @@ func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, erro
 		&i.LastName,
 		&i.NickName,
 		&i.AvatarUrl,
+		&i.PictureUrl,
 		&i.Location,
+		&i.Roles,
+		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const userReadMaster = `-- name: UserReadMaster :one
+SELECT id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at FROM "users" where master = true LIMIT 1
+`
+
+func (q *Queries) UserReadMaster(ctx context.Context) (User, error) {
+	row := q.db.QueryRow(ctx, userReadMaster)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Verified,
+		&i.Blocked,
+		&i.Provider,
+		&i.GoogleID,
+		&i.Name,
+		&i.FirstName,
+		&i.LastName,
+		&i.NickName,
+		&i.AvatarUrl,
+		&i.PictureUrl,
+		&i.Location,
+		&i.Roles,
+		&i.Master,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const userUpdate = `-- name: UserUpdate :one
+UPDATE "users" SET
+  name = $1,
+  first_name = $2, 
+  last_name = $3,
+  nick_name = $4,
+  picture_url = $5
+WHERE id = $6 RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at
+`
+
+type UserUpdateParams struct {
+	Name       string    `json:"name"`
+	FirstName  string    `json:"first_name"`
+	LastName   string    `json:"last_name"`
+	NickName   string    `json:"nick_name"`
+	PictureUrl string    `json:"picture_url"`
+	ID         uuid.UUID `json:"id"`
+}
+
+func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, error) {
+	row := q.db.QueryRow(ctx, userUpdate,
+		arg.Name,
+		arg.FirstName,
+		arg.LastName,
+		arg.NickName,
+		arg.PictureUrl,
+		arg.ID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Verified,
+		&i.Blocked,
+		&i.Provider,
+		&i.GoogleID,
+		&i.Name,
+		&i.FirstName,
+		&i.LastName,
+		&i.NickName,
+		&i.AvatarUrl,
+		&i.PictureUrl,
+		&i.Location,
+		&i.Roles,
+		&i.Master,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const usersRead = `-- name: UsersRead :many
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" limit $2 offset $1
+`
+
+type UsersReadParams struct {
+	Offset pgtype.Int4 `json:"offset"`
+	Limit  pgtype.Int4 `json:"limit"`
+}
+
+func (q *Queries) UsersRead(ctx context.Context, arg UsersReadParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, usersRead, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Verified,
+			&i.Blocked,
+			&i.Provider,
+			&i.GoogleID,
+			&i.Name,
+			&i.FirstName,
+			&i.LastName,
+			&i.NickName,
+			&i.AvatarUrl,
+			&i.PictureUrl,
+			&i.Location,
+			&i.Roles,
+			&i.Master,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

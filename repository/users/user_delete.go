@@ -2,20 +2,25 @@ package users
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	repoerrors "github.com/sirjager/goth/repository/errors"
 )
 
-func (r *repo) UserDelete(ctx context.Context, userID string) error {
+func (r *repo) UserDelete(ctx context.Context, userID string) (res UserDeleteResult) {
 	_, err := r.store.UserDelete(ctx, uuid.MustParse(userID))
 	if err != nil {
+		res.Error = err
+		res.StatusCode = http.StatusInternalServerError
 		if isRecordNotFound(err) {
-			return repoerrors.ErrUserNotFound
+			res.StatusCode = http.StatusNotFound
+			res.Error = repoerrors.ErrUserNotFound
 		}
-		return err
+		return
 	}
 
-	return nil
+	res.StatusCode = http.StatusOK
+	return
 }

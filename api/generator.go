@@ -8,10 +8,6 @@ import (
 	"github.com/sirjager/goth/entity"
 )
 
-type UserResponse struct {
-	User User `json:"user,omitempty"`
-} // @name UserResponse
-
 type User struct {
 	ID        string    `json:"id,omitempty"`
 	Email     string    `json:"email,omitempty"`
@@ -38,19 +34,28 @@ func EntityToUser(user *entity.User) User {
 	}
 }
 
+func EntitiesToUsers(users []*entity.User) []User {
+	result := []User{}
+	for _, u := range users {
+		result = append(result, EntityToUser(u))
+	}
+	return result
+}
+
 func GothUserToEntityUser(user goth.User) *entity.User {
 	userEntity := &entity.User{
-		ID:        user.UserID,
-		Email:     user.Email,
-		Provider:  user.Provider,
-		Name:      user.Name,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Location:  user.Location,
-		NickName:  user.NickName,
-		GoogleID:  user.UserID,
-		Verified:  false,
-		AvatarURL: user.AvatarURL,
+		ID:         user.UserID,
+		Email:      user.Email,
+		Provider:   user.Provider,
+		Name:       user.Name,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		Location:   user.Location,
+		NickName:   user.NickName,
+		GoogleID:   user.UserID,
+		Verified:   false,
+		PictureURL: user.AvatarURL,
+		AvatarURL:  user.AvatarURL,
 	}
 
 	if user.RawData["verified_email"] != nil {

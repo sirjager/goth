@@ -21,14 +21,14 @@ type welcomeResponse struct {
 //	@Router			/ [get]
 //	@Success		200	{object}	welcomeResponse
 func (a *API) welcome(w http.ResponseWriter, r *http.Request) {
-	data := welcomeResponse{
+	response := welcomeResponse{
 		Message: fmt.Sprintf("Welcome to %s", a.config.ServiceName),
 		Docs:    "/swagger",
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		a.logr.Error().Err(err).Msg("failed to encode welcome response")
 		http.Error(w, err.Error(), 500)
 	}

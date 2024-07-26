@@ -25,7 +25,7 @@ type healthResponse struct {
 // @Router			/health [get]
 // @Success		200	{object}	healthResponse
 func (a *API) health(w http.ResponseWriter, r *http.Request) {
-	data := healthResponse{
+	response := healthResponse{
 		Timestamp: time.Now(),
 		Service:   a.config.ServiceName,
 		Server:    a.config.ServerName,
@@ -36,7 +36,7 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		a.logr.Error().Err(err).Msg("failed to encode health response")
 		http.Error(w, err.Error(), 500)
 	}

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
@@ -14,17 +15,20 @@ import (
 )
 
 type API struct {
-	logr   zerolog.Logger
-	router *chi.Mux
-	repo   *repository.Repo
-	config config.Config
+	logr      zerolog.Logger
+	router    *chi.Mux
+	repo      *repository.Repo
+	config    config.Config
+	validate *validator.Validate
 }
 
 func NewServer(repo *repository.Repo, logr zerolog.Logger, config config.Config) *API {
+	validator := validator.New(validator.WithRequiredStructEnabled())
 	server := &API{
-		logr:   logr,
-		config: config,
-		repo:   repo,
+		logr:      logr,
+		config:    config,
+		repo:      repo,
+		validate: validator,
 	}
 	server.setupRouter()
 	return server

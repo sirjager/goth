@@ -1,6 +1,4 @@
 ---
-version: "3.8"
-
 volumes:
   goth-redis:
   goth-postgres:
@@ -21,7 +19,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - goth-redis:/data
     networks: [goth]
-    ports: [6379:6379]   # Disable ports in production
+    ports: [6379:6379]
 
   goth-postgres:
     security_opt: [no-new-privileges:true]
