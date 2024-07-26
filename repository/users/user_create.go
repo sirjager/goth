@@ -12,7 +12,7 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-func (r *repo) UserCreate(c context.Context, u *entity.User) (res UserReadResult) {
+func (r *UserRepo) UserCreate(c context.Context, u *entity.User) (res UserReadResult) {
 	dbuser, err := r.store.UserCreate(c, sqlc.UserCreateParams{
 		ID:         uuid.New(),
 		Email:      u.Email,
@@ -43,6 +43,6 @@ func (r *repo) UserCreate(c context.Context, u *entity.User) (res UserReadResult
 	}
 
 	res.StatusCode = 201
-	res.User = r.toUserEntity(dbuser)
+	res.User = r.ToUserEntity(dbuser)
 	return
 }

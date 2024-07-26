@@ -153,35 +153,6 @@ func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, erro
 	return i, err
 }
 
-const userReadMaster = `-- name: UserReadMaster :one
-SELECT id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at FROM "users" where master = true LIMIT 1
-`
-
-func (q *Queries) UserReadMaster(ctx context.Context) (User, error) {
-	row := q.db.QueryRow(ctx, userReadMaster)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Verified,
-		&i.Blocked,
-		&i.Provider,
-		&i.GoogleID,
-		&i.Name,
-		&i.FirstName,
-		&i.LastName,
-		&i.NickName,
-		&i.AvatarUrl,
-		&i.PictureUrl,
-		&i.Location,
-		&i.Roles,
-		&i.Master,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const userUpdate = `-- name: UserUpdate :one
 UPDATE "users" SET
   name = $1,

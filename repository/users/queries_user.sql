@@ -29,7 +29,3 @@ UPDATE "users" SET
   picture_url = $5
 WHERE id = $6 RETURNING *;
 
-
--- name: UserReadMaster :one 
-SELECT * FROM "users" where master = true LIMIT 1;
-

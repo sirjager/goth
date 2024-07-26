@@ -9,7 +9,12 @@ import (
 	repoerrors "github.com/sirjager/goth/repository/errors"
 )
 
-func (r *repo) UserDelete(ctx context.Context, userID string) (res UserDeleteResult) {
+type UserDeleteResult struct {
+	Error      error
+	StatusCode int
+}
+
+func (r *UserRepo) UserDelete(ctx context.Context, userID string) (res UserDeleteResult) {
 	_, err := r.store.UserDelete(ctx, uuid.MustParse(userID))
 	if err != nil {
 		res.Error = err

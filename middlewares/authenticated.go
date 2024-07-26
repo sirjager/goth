@@ -15,7 +15,7 @@ type contextType string
 
 const SessionCookieName = "gothic_session"
 
-const userContext contextType = "user"
+const ContextKeyUser contextType = "ctx_authenticated_user"
 
 func IsAuthenticated(r *http.Request, repo *repository.Repo) (*entity.User, bool) {
 	sess, err := gothic.Store.Get(r, SessionCookieName)
@@ -45,7 +45,7 @@ func RequiresAuth(repo *repository.Repo) func(next http.Handler) http.Handler {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			ctx := context.WithValue(r.Context(), userContext, user)
+			ctx := context.WithValue(r.Context(), ContextKeyUser, user)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

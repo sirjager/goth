@@ -13,23 +13,25 @@ func (a *API) setupRouter() {
 
 	c.Use(middleware.Recoverer)
 
-	c.Get("/", a.welcome)
-	c.Get("/health", a.health)
-	c.Get("/swagger", a.scalarDocs)
+	c.Get("/", a.SysWelcome)
+	c.Get("/health", a.SysHealth)
+	c.Get("/swagger", a.SysDocs)
 
-	// authentication routes
+	// NOTE: Authentication routes
 	c.Route("/auth", func(r chi.Router) {
 		r.Get("/{provider}", a.AuthProvider)
 		r.Get("/{provider}/callback", a.AuthCallback)
 		r.Get("/logout/{provider}", a.AuthLogout)
 	})
 
-	// NOTE: Authenticated Routes
-	c.Group(func(r chi.Router) {
-		r.Use(mw.RequiresAuth(a.repo))
+	// NOTE: Authenticated routes
+	c.Group(func(authenticated chi.Router) {
+		authenticated.Use(mw.RequiresAuth(a.repo))
+		authenticated.Use(mw.AquireRoles(a.repo))
+		authenticated.Use(mw.AquirePermissions(a.repo))
 
-		r.Get("/users", a.UsersGet)
-		r.Get("/users/{identity}", a.UserGet)
-		r.Patch("/users/{identity}", a.UserUpdate)
+		authenticated.Get("/users", a.UsersGet)
+		authenticated.Get("/users/{identity}", a.UserGet)
+		authenticated.Patch("/users/{identity}", a.UserUpdate)
 	})
 }

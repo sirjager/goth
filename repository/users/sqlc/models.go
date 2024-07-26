@@ -31,7 +31,7 @@ type Role struct {
 	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
-type RolePermission struct {
+type RolesPermission struct {
 	ID           uuid.UUID `json:"id"`
 	RoleID       uuid.UUID `json:"role_id"`
 	PermissionID uuid.UUID `json:"permission_id"`
@@ -55,4 +55,10 @@ type User struct {
 	Master     bool      `json:"master"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type UsersRole struct {
+	ID     uuid.UUID `json:"id"`
+	RoleID uuid.UUID `json:"role_id"`
+	UserID uuid.UUID `json:"user_id"`
 }

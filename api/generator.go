@@ -9,6 +9,8 @@ import (
 )
 
 type User struct {
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	ID        string    `json:"id,omitempty"`
 	Email     string    `json:"email,omitempty"`
 	AvatarURL string    `json:"avatar_url,omitempty"`
@@ -16,8 +18,6 @@ type User struct {
 	LastName  string    `json:"last_name,omitempty"`
 	Verified  bool      `json:"verified,omitempty"`
 	Blocked   bool      `json:"blocked,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
 } // @name User
 
 func EntityToUser(user *entity.User) User {

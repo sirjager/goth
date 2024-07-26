@@ -9,18 +9,18 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-type repo struct {
+type UserRepo struct {
 	logr  zerolog.Logger
 	store sqlc.Store
 }
 
-func NewUsersRepo(conn *pgxpool.Pool, pgURL string, l zerolog.Logger) (UsersRepo, error) {
+func NewUsersRepo(conn *pgxpool.Pool, pgURL string, l zerolog.Logger) (*UserRepo, error) {
 	if err := usersrepomigrations.MigrateUsersRepo(pgURL); err != nil {
 		l.Error().Err(err).Msg("failed to migrate users repo")
 		return nil, repoerrors.ErrFailedToMigrate
 	}
 	store := sqlc.NewStore(conn)
-	repo := &repo{logr: l, store: store}
+	repo := &UserRepo{logr: l, store: store}
 	l.Info().Msg("repository initialized")
 	return repo, nil
 }

@@ -15,11 +15,11 @@ import (
 )
 
 type API struct {
-	logr      zerolog.Logger
-	router    *chi.Mux
-	repo      *repository.Repo
-	config    config.Config
+	logr     zerolog.Logger
+	router   *chi.Mux
+	repo     *repository.Repo
 	validate *validator.Validate
+	config   config.Config
 }
 
 func NewServer(repo *repository.Repo, logr zerolog.Logger, config config.Config) *API {

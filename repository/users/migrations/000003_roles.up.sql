@@ -7,3 +7,12 @@ CREATE TABLE "roles" (
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT (now()),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT (now())
 );
+
+
+-- NOTE: Initial Roles
+INSERT INTO "roles"
+  (name, description)
+VALUES 
+  ('ADMIN', 'Admin role with all permissions, cannot manage other admins and master'),
+  ('USER', 'User role with basic permissions, can only access its own resources');
+

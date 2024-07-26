@@ -12,6 +12,6 @@ type UserUpdateParams struct {
 	PictureURL string
 }
 
-func (r *repo) UserUpdate(ctx context.Context, id string, p *UserUpdateParams) {
+func (r *UserRepo) UserUpdate(ctx context.Context, id string, p *UserUpdateParams) {
  
 }

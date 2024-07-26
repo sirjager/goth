@@ -7,7 +7,7 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-func (r *repo) toUserEntity(dbUser sqlc.User) *entity.User {
+func (r *UserRepo) ToUserEntity(dbUser sqlc.User) *entity.User {
 	return &entity.User{
 		ID:        dbUser.ID.String(),
 		Email:     dbUser.Email,
@@ -27,7 +27,7 @@ func (r *repo) toUserEntity(dbUser sqlc.User) *entity.User {
 	}
 }
 
-func (r *repo) ToDatabaseUser(user *entity.User) sqlc.User {
+func (r *UserRepo) ToDatabaseUser(user *entity.User) sqlc.User {
 	return sqlc.User{
 		ID:        uuid.MustParse(user.ID),
 		Email:     user.Email,

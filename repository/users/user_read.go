@@ -12,7 +12,13 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-func (r *repo) UsersRead(
+type UsersReadResult struct {
+	Error      error
+	Users      []*entity.User
+	StatusCode int
+}
+
+func (r *UserRepo) UsersRead(
 	ctx context.Context,
 	optionalLimit, optionalPage int,
 ) (res UsersReadResult) {
@@ -36,7 +42,7 @@ func (r *repo) UsersRead(
 
 	users := []*entity.User{}
 	for _, u := range dbUsers {
-		users = append(users, r.toUserEntity(u))
+		users = append(users, r.ToUserEntity(u))
 	}
 
 	res.StatusCode = http.StatusOK
@@ -44,7 +50,13 @@ func (r *repo) UsersRead(
 	return
 }
 
-func (r *repo) UserReadByID(ctx context.Context, userID string) (res UserReadResult) {
+type UserReadResult struct {
+	Error      error
+	User       *entity.User
+	StatusCode int
+}
+
+func (r *UserRepo) UserReadByID(ctx context.Context, userID string) (res UserReadResult) {
 	dbuser, err := r.store.UserRead(ctx, uuid.MustParse(userID))
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
@@ -57,11 +69,11 @@ func (r *repo) UserReadByID(ctx context.Context, userID string) (res UserReadRes
 		return
 	}
 	res.StatusCode = http.StatusOK
-	res.User = r.toUserEntity(dbuser)
+	res.User = r.ToUserEntity(dbuser)
 	return
 }
 
-func (r *repo) UserReadByEmail(ctx context.Context, email string) (res UserReadResult) {
+func (r *UserRepo) UserReadByEmail(ctx context.Context, email string) (res UserReadResult) {
 	dbuser, err := r.store.UserReadByEmail(ctx, email)
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
@@ -74,11 +86,11 @@ func (r *repo) UserReadByEmail(ctx context.Context, email string) (res UserReadR
 		return
 	}
 	res.StatusCode = http.StatusOK
-	res.User = r.toUserEntity(dbuser)
+	res.User = r.ToUserEntity(dbuser)
 	return
 }
 
-func (r *repo) UserReadMaster(ctx context.Context) (res UserReadResult) {
+func (r *UserRepo) UserReadMaster(ctx context.Context) (res UserReadResult) {
 	dbuser, err := r.store.UserReadMaster(ctx)
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
@@ -91,6 +103,6 @@ func (r *repo) UserReadMaster(ctx context.Context) (res UserReadResult) {
 		return
 	}
 	res.StatusCode = http.StatusOK
-	res.User = r.toUserEntity(dbuser)
+	res.User = r.ToUserEntity(dbuser)
 	return
 }

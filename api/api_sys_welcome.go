@@ -20,7 +20,7 @@ type welcomeResponse struct {
 //	@Produce		json
 //	@Router			/ [get]
 //	@Success		200	{object}	welcomeResponse
-func (a *API) welcome(w http.ResponseWriter, r *http.Request) {
+func (a *API) SysWelcome(w http.ResponseWriter, r *http.Request) {
 	response := welcomeResponse{
 		Message: fmt.Sprintf("Welcome to %s", a.config.ServiceName),
 		Docs:    "/swagger",
