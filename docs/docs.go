@@ -41,6 +41,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/SysHealth": {
+            "get": {
+                "description": "Health Check",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/logout/{provider}": {
             "get": {
                 "description": "Logout from a provider",
@@ -87,29 +110,6 @@ const docTemplate = `{
                         "description": "User Response",
                         "schema": {
                             "$ref": "#/definitions/UserResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/health": {
-            "get": {
-                "description": "Health Check",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "System"
-                ],
-                "summary": "Health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/HealthResponse"
                         }
                     }
                 }
