@@ -12,10 +12,15 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
+type UserCreateParams struct {
+	User        *entity.User
+	AfterCreate func(created *entity.User) error
+}
+
 func (r *UserRepo) UserCreate(c context.Context, u *entity.User) (res UserReadResult) {
 	dbuser, err := r.store.UserCreate(c, sqlc.UserCreateParams{
 		ID:         uuid.New(),
-		Email:      u.Email,
+		Email:      u.Email.Value(),
 		Verified:   u.Verified,
 		Blocked:    u.Blocked,
 		Provider:   u.Provider,

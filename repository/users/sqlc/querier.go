@@ -11,14 +11,11 @@ import (
 )
 
 type Querier interface {
-	RolePermissions(ctx context.Context, roleID uuid.UUID) ([]RolePermissionsRow, error)
 	UserCreate(ctx context.Context, arg UserCreateParams) (User, error)
 	UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
-	UserPermissions(ctx context.Context, userID uuid.UUID) ([]Permission, error)
 	UserRead(ctx context.Context, id uuid.UUID) (User, error)
 	UserReadByEmail(ctx context.Context, email string) (User, error)
 	UserReadMaster(ctx context.Context) (User, error)
-	UserRoles(ctx context.Context, userID uuid.UUID) ([]Role, error)
 	UserUpdate(ctx context.Context, arg UserUpdateParams) (User, error)
 	UsersRead(ctx context.Context, arg UsersReadParams) ([]User, error)
 }

@@ -195,6 +195,42 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "Partially Update User",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Update User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identity can either be email or id",
+                        "name": "identity",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update User Params",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User Response",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
             }
         }
     },
@@ -225,9 +261,6 @@ const docTemplate = `{
         "User": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
                 "blocked": {
                     "type": "boolean"
                 },
@@ -246,6 +279,12 @@ const docTemplate = `{
                 "last_name": {
                     "type": "string"
                 },
+                "name": {
+                    "type": "string"
+                },
+                "picture_url": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -259,6 +298,26 @@ const docTemplate = `{
             "properties": {
                 "user": {
                     "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "UserUpdateParams": {
+            "type": "object",
+            "properties": {
+                "first_name": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "last_name": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "picture_url": {
+                    "type": "string"
                 }
             }
         },

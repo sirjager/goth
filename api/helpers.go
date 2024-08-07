@@ -1,12 +1,41 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/sirjager/goth/repository"
+	"github.com/sirjager/goth/repository/users"
+	"github.com/sirjager/goth/vo"
 )
 
-func getPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
+func (a *API) Failure(w http.ResponseWriter, response any, statusCode ...int) {
+	status := 500
+	if len(statusCode) == 1 {
+		status = statusCode[0]
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (a *API) Success(w http.ResponseWriter, response any, statusCode ...int) {
+	status := 200
+	if len(statusCode) == 1 {
+		status = statusCode[0]
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (a *API) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
 	pageParam := r.URL.Query().Get("page")
 	limitParam := r.URL.Query().Get("limit")
 	if (pageParam) != "" {
@@ -36,4 +65,13 @@ func (a *API) ParseAndValidate(r *http.Request, v interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// fetchUserFromRepository fetches user by email or id
+func fetchUserFromRepository(c context.Context, identity string, repo *repository.Repo) users.UserReadResult {
+	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
+		return repo.UserReadByEmail(c, email)
+	} else {
+		return repo.UserReadByID(c, vo.MustParseID(identity))
+	}
 }

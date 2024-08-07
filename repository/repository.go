@@ -12,7 +12,6 @@ type Repo struct {
 }
 
 func NewRepository(conn *pgxpool.Pool, pgURL string, logger zerolog.Logger) (*Repo, error) {
-
 	users, err := users.NewUsersRepo(conn, pgURL, logger)
 	if err != nil {
 		return nil, err

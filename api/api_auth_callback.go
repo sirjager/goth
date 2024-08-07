@@ -11,6 +11,7 @@ import (
 
 	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository"
+	"github.com/sirjager/goth/vo"
 )
 
 func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +49,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// if its user already exits error, get user and return it
-		result = a.repo.UserReadByEmail(r.Context(), gothUser.Email)
+		result = a.repo.UserReadByEmail(r.Context(), vo.MustParseEmail(gothUser.Email))
 	}
 
 	if result.Error != nil {

@@ -26,6 +26,10 @@ UPDATE "users" SET
   first_name = $2, 
   last_name = $3,
   nick_name = $4,
-  picture_url = $5
-WHERE id = $6 RETURNING *;
+  picture_url = $5,
+  avatar_url = $6
+WHERE id = @id RETURNING *;
 
+
+-- name: UserReadMaster :one 
+SELECT * FROM "users" where master = true LIMIT 1;

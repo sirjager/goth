@@ -1,17 +1,16 @@
-package sqlc
+package users
 
 import (
 	"context"
 	"fmt"
 )
 
-func (s *SQLStore) ExecTx(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := s.pool.Begin(ctx)
+func (r *UserRepo) ExecTx(ctx context.Context, fn func() error) error {
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	queries := New(tx)
-	if err = fn(queries); err != nil {
+	if err = fn(); err != nil {
 		if rollBackErr := tx.Rollback(ctx); rollBackErr != nil {
 			return fmt.Errorf("transaction error: %v , rollback error: %v", err, rollBackErr)
 		}

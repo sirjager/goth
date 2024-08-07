@@ -17,7 +17,6 @@ CREATE TABLE "users" (
   "picture_url" TEXT NOT NULL DEFAULT '',
   "location" TEXT NOT NULL DEFAULT '',
 
-  "roles" TEXT NOT NULL DEFAULT '',
   "master" BOOL NOT NULL DEFAULT FALSE,
   CHECK (master IN (TRUE, FALSE)),
 
@@ -25,7 +24,9 @@ CREATE TABLE "users" (
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT (now())
 );
 
+
 CREATE INDEX ON "users" ("created_at");
+
 CREATE UNIQUE INDEX "only_one_master" ON "users" (master) WHERE master = TRUE;
 
 CREATE TRIGGER trg_update_updated_at BEFORE UPDATE ON "users"
