@@ -9,27 +9,6 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 )
 
-func patchUser(user *entity.User, params UpdateUserParams) (shouldPatch bool) {
-	// only update when params are not empty and when different
-	if params.Name != "" && params.Name != user.Name {
-		shouldPatch = true
-		user.Name = params.Name
-	}
-	if params.FirstName != "" && params.FirstName != user.FirstName {
-		shouldPatch = true
-		user.FirstName = params.FirstName
-	}
-	if params.LastName != "" && params.LastName != user.LastName {
-		shouldPatch = true
-		user.LastName = params.LastName
-	}
-	if params.PictureURL != "" && params.PictureURL != user.PictureURL {
-		shouldPatch = true
-		user.PictureURL = params.PictureURL
-	}
-	return shouldPatch
-}
-
 type UpdateUserParams struct {
 	FirstName  string `json:"first_name,omitempty"  validate:"max=30"`
 	LastName   string `json:"last_name,omitempty"   validate:"max=30"`
@@ -79,4 +58,25 @@ func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	response := UserResponse{EntityToUser(target)}
 	a.Success(w, response)
+}
+
+func patchUser(user *entity.User, params UpdateUserParams) (shouldPatch bool) {
+	// only update when params are not empty and when different
+	if params.Name != "" && params.Name != user.Name {
+		shouldPatch = true
+		user.Name = params.Name
+	}
+	if params.FirstName != "" && params.FirstName != user.FirstName {
+		shouldPatch = true
+		user.FirstName = params.FirstName
+	}
+	if params.LastName != "" && params.LastName != user.LastName {
+		shouldPatch = true
+		user.LastName = params.LastName
+	}
+	if params.PictureURL != "" && params.PictureURL != user.PictureURL {
+		shouldPatch = true
+		user.PictureURL = params.PictureURL
+	}
+	return shouldPatch
 }
