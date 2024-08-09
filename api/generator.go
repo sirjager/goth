@@ -6,32 +6,39 @@ import (
 	"github.com/markbates/goth"
 
 	"github.com/sirjager/goth/entity"
+	"github.com/sirjager/goth/vo"
 )
 
 type User struct {
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	ID        string    `json:"id,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	AvatarURL string    `json:"avatar_url,omitempty"`
-	FirstName string    `json:"first_name,omitempty"`
-	LastName  string    `json:"last_name,omitempty"`
-	Verified  bool      `json:"verified,omitempty"`
-	Blocked   bool      `json:"blocked,omitempty"`
+	CreatedAt  time.Time `json:"created_at,omitempty"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty"`
+	ID         string    `json:"id,omitempty"`
+	Email      string    `json:"email,omitempty"`
+	PictureURL string    `json:"picture_url,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	FirstName  string    `json:"first_name,omitempty"`
+	LastName   string    `json:"last_name,omitempty"`
+	Verified   bool      `json:"verified,omitempty"`
+	Blocked    bool      `json:"blocked,omitempty"`
 } // @name User
 
 func EntityToUser(user *entity.User) User {
-	return User{
-		ID:        user.ID,
-		Email:     user.Email,
-		Verified:  user.Verified,
-		Blocked:   user.Blocked,
-		AvatarURL: user.AvatarURL,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+	u := User{
+		ID:         user.ID.Value().String(),
+		Email:      user.Email.Value(),
+		Verified:   user.Verified,
+		Blocked:    user.Blocked,
+		Name:       user.Name,
+		PictureURL: user.AvatarURL,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
 	}
+	if user.PictureURL != "" {
+		u.PictureURL = user.PictureURL
+	}
+	return u
 }
 
 func EntitiesToUsers(users []*entity.User) []User {
@@ -44,8 +51,8 @@ func EntitiesToUsers(users []*entity.User) []User {
 
 func GothUserToEntityUser(user goth.User) *entity.User {
 	userEntity := &entity.User{
-		ID:         user.UserID,
-		Email:      user.Email,
+		// ID:         vo.MustParseID(user.UserID), -- this is google id, it is slightly different, so we have to skip this
+		Email:      vo.MustParseEmail(user.Email),
 		Provider:   user.Provider,
 		Name:       user.Name,
 		FirstName:  user.FirstName,
@@ -54,8 +61,8 @@ func GothUserToEntityUser(user goth.User) *entity.User {
 		NickName:   user.NickName,
 		GoogleID:   user.UserID,
 		Verified:   false,
-		PictureURL: user.AvatarURL,
-		AvatarURL:  user.AvatarURL,
+		PictureURL: user.AvatarURL, //  this will be set by user,
+		AvatarURL:  user.AvatarURL, // this comes from auth provider
 	}
 
 	if user.RawData["verified_email"] != nil {

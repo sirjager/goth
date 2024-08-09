@@ -24,14 +24,19 @@ func (a *API) setupRouter() {
 		r.Get("/logout/{provider}", a.AuthLogout)
 	})
 
-	// NOTE: Authenticated routes
-	c.Group(func(authenticated chi.Router) {
-		authenticated.Use(mw.RequiresAuth(a.repo))
-		authenticated.Use(mw.AquireRoles(a.repo))
-		authenticated.Use(mw.AquirePermissions(a.repo))
+	c.Route("/users", func(r chi.Router) {
+		r.Use(mw.RequiresAuth(a.repo))
+		r.Use(mw.RequiresVerified())
+		r.Use(mw.RequiresMaster())
+		r.Get("/", a.UsersGet)
+	})
 
-		authenticated.Get("/users", a.UsersGet)
-		authenticated.Get("/users/{identity}", a.UserGet)
-		authenticated.Patch("/users/{identity}", a.UserUpdate)
+	c.Route("/users/{identity}", func(r chi.Router) {
+		r.Use(mw.RequiresAuth(a.repo))
+		r.Use(mw.RequiresVerified())
+		r.Use(mw.RequiresPermissions())
+
+		r.Get("/", a.UserGet)
+		r.Patch("/", a.UserUpdate)
 	})
 }

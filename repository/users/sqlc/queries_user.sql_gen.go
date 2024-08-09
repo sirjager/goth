@@ -21,7 +21,7 @@ INSERT INTO "users" (
   avatar_url,picture_url,location,master,
   created_at,updated_at
 ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
 `
 
 type UserCreateParams struct {
@@ -77,7 +77,6 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 		&i.AvatarUrl,
 		&i.PictureUrl,
 		&i.Location,
-		&i.Roles,
 		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -96,7 +95,7 @@ func (q *Queries) UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, erro
 }
 
 const userRead = `-- name: UserRead :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" where id = $1 limit 1
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where id = $1 limit 1
 `
 
 func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
@@ -116,7 +115,6 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.AvatarUrl,
 		&i.PictureUrl,
 		&i.Location,
-		&i.Roles,
 		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -125,7 +123,7 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const userReadByEmail = `-- name: UserReadByEmail :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" where email = $1 limit 1
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where email = $1 limit 1
 `
 
 func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, error) {
@@ -145,7 +143,34 @@ func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, erro
 		&i.AvatarUrl,
 		&i.PictureUrl,
 		&i.Location,
-		&i.Roles,
+		&i.Master,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const userReadMaster = `-- name: UserReadMaster :one
+SELECT id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at FROM "users" where master = true LIMIT 1
+`
+
+func (q *Queries) UserReadMaster(ctx context.Context) (User, error) {
+	row := q.db.QueryRow(ctx, userReadMaster)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Verified,
+		&i.Blocked,
+		&i.Provider,
+		&i.GoogleID,
+		&i.Name,
+		&i.FirstName,
+		&i.LastName,
+		&i.NickName,
+		&i.AvatarUrl,
+		&i.PictureUrl,
+		&i.Location,
 		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -159,8 +184,9 @@ UPDATE "users" SET
   first_name = $2, 
   last_name = $3,
   nick_name = $4,
-  picture_url = $5
-WHERE id = $6 RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at
+  picture_url = $5,
+  avatar_url = $6
+WHERE id = $7 RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
 `
 
 type UserUpdateParams struct {
@@ -169,6 +195,7 @@ type UserUpdateParams struct {
 	LastName   string    `json:"last_name"`
 	NickName   string    `json:"nick_name"`
 	PictureUrl string    `json:"picture_url"`
+	AvatarUrl  string    `json:"avatar_url"`
 	ID         uuid.UUID `json:"id"`
 }
 
@@ -179,6 +206,7 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 		arg.LastName,
 		arg.NickName,
 		arg.PictureUrl,
+		arg.AvatarUrl,
 		arg.ID,
 	)
 	var i User
@@ -196,7 +224,6 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 		&i.AvatarUrl,
 		&i.PictureUrl,
 		&i.Location,
-		&i.Roles,
 		&i.Master,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -205,7 +232,7 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 }
 
 const usersRead = `-- name: UsersRead :many
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, roles, master, created_at, updated_at from "users" limit $2 offset $1
+select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" limit $2 offset $1
 `
 
 type UsersReadParams struct {
@@ -236,7 +263,6 @@ func (q *Queries) UsersRead(ctx context.Context, arg UsersReadParams) ([]User, e
 			&i.AvatarUrl,
 			&i.PictureUrl,
 			&i.Location,
-			&i.Roles,
 			&i.Master,
 			&i.CreatedAt,
 			&i.UpdatedAt,

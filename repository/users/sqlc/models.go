@@ -8,34 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-type Permission struct {
-	ID          uuid.UUID   `json:"id"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	CreatedBy   pgtype.UUID `json:"created_by"`
-	UpdatedBy   pgtype.UUID `json:"updated_by"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-}
-
-type Role struct {
-	ID          uuid.UUID   `json:"id"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	CreatedBy   pgtype.UUID `json:"created_by"`
-	UpdatedBy   pgtype.UUID `json:"updated_by"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-}
-
-type RolesPermission struct {
-	ID           uuid.UUID `json:"id"`
-	RoleID       uuid.UUID `json:"role_id"`
-	PermissionID uuid.UUID `json:"permission_id"`
-}
 
 type User struct {
 	ID         uuid.UUID `json:"id"`
@@ -51,14 +24,7 @@ type User struct {
 	AvatarUrl  string    `json:"avatar_url"`
 	PictureUrl string    `json:"picture_url"`
 	Location   string    `json:"location"`
-	Roles      string    `json:"roles"`
 	Master     bool      `json:"master"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
-}
-
-type UsersRole struct {
-	ID     uuid.UUID `json:"id"`
-	RoleID uuid.UUID `json:"role_id"`
-	UserID uuid.UUID `json:"user_id"`
 }

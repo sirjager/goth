@@ -36,4 +36,3 @@ services:
       - goth-postgres:/var/lib/postgresql/data
     networks: [goth]
     ports: [5432:5432]   # Disable ports in production
-

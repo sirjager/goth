@@ -1,13 +1,12 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
+	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository/users"
-	"github.com/sirjager/goth/vo"
 )
 
 type UserResponse struct {
@@ -22,30 +21,25 @@ type UserResponse struct {
 // @Success		200			{object}	UserResponse	"User Response"
 // @Router			/users/{identity} [get]
 func (a *API) UserGet(w http.ResponseWriter, r *http.Request) {
+	user := mw.UserOrPanic(r)
 	identity := chi.URLParam(r, "identity")
 	var result users.UserReadResult
 
-	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
-		result = a.repo.UserReadByEmail(r.Context(), email.Value())
+	// if asking for own user document, then return authenticated user
+	if mw.IsCurrentUserIdentity(r) {
+		result = users.UserReadResult{Error: nil, User: user, StatusCode: 200}
 	} else {
-		result = a.repo.UserReadByID(r.Context(), identity)
+		result = fetchUserFromRepository(r.Context(), identity, a.repo)
 	}
+
 	if result.Error != nil {
-		if result.StatusCode == http.StatusNotFound {
-			http.Error(w, result.Error.Error(), result.StatusCode)
-			return
-		}
 		http.Error(w, result.Error.Error(), result.StatusCode)
 		return
 	}
 
+	// resolved master role request
 	response := UserResponse{EntityToUser(result.User)}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	a.Success(w, response, result.StatusCode)
 }
 
 type UsersResponse struct {
@@ -63,7 +57,7 @@ type UsersResponse struct {
 func (a *API) UsersGet(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 100
-	getPageAndLimitFromRequest(r, &page, &limit)
+	a.GetPageAndLimitFromRequest(r, &page, &limit)
 	result := a.repo.UsersRead(r.Context(), limit, page)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), result.StatusCode)
@@ -71,10 +65,5 @@ func (a *API) UsersGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := UsersResponse{EntitiesToUsers(result.Users)}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	a.Success(w, response, result.StatusCode)
 }

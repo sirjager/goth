@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/sirjager/goth/entity"
 	repoerrors "github.com/sirjager/goth/repository/errors"
 	"github.com/sirjager/goth/repository/users/sqlc"
+	"github.com/sirjager/goth/vo"
 )
 
 type UsersReadResult struct {
@@ -56,8 +56,8 @@ type UserReadResult struct {
 	StatusCode int
 }
 
-func (r *UserRepo) UserReadByID(ctx context.Context, userID string) (res UserReadResult) {
-	dbuser, err := r.store.UserRead(ctx, uuid.MustParse(userID))
+func (r *UserRepo) UserReadByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
+	dbuser, err := r.store.UserRead(ctx, userID.Value())
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err
@@ -73,8 +73,8 @@ func (r *UserRepo) UserReadByID(ctx context.Context, userID string) (res UserRea
 	return
 }
 
-func (r *UserRepo) UserReadByEmail(ctx context.Context, email string) (res UserReadResult) {
-	dbuser, err := r.store.UserReadByEmail(ctx, email)
+func (r *UserRepo) UserReadByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
+	dbuser, err := r.store.UserReadByEmail(ctx, email.Value())
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err

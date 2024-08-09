@@ -9,4 +9,6 @@ var (
 	ErrUserAlreadyExists = errors.New("user already exists")
 
 	ErrFailedToMigrate = errors.New("failed to migrate database")
+
+	ErrRoleNotFound = errors.New("role not found")
 )
