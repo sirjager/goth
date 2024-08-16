@@ -11,16 +11,25 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-func (a *API) Failure(w http.ResponseWriter, response any, statusCode ...int) {
+type Validation bool
+
+const (
+	ValidationDisable Validation = false
+	ValidationEnable  Validation = true
+)
+
+func (a *API) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
+	for _, cookie := range cookies {
+		http.SetCookie(w, cookie)
+	}
+}
+
+func (a *API) Failure(w http.ResponseWriter, err error, statusCode ...int) {
 	status := 500
 	if len(statusCode) == 1 {
 		status = statusCode[0]
 	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http.Error(w, err.Error(), status)
 }
 
 func (a *API) Success(w http.ResponseWriter, response any, statusCode ...int) {
@@ -31,7 +40,7 @@ func (a *API) Success(w http.ResponseWriter, response any, statusCode ...int) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.Failure(w, err)
 	}
 }
 
@@ -57,18 +66,28 @@ func (a *API) ParseJSON(r *http.Request, v interface{}) error {
 	return nil
 }
 
-func (a *API) ParseAndValidate(r *http.Request, v interface{}) error {
+func (a *API) ParseAndValidate(r *http.Request, v interface{}, validation ...Validation) error {
+	validate := ValidationEnable
+	if len(validation) == 1 {
+		validate = validation[0]
+	}
 	if err := a.ParseJSON(r, v); err != nil {
 		return err
 	}
-	if err := a.validate.Struct(v); err != nil {
-		return err
+	if validate {
+		if err := a.validate.Struct(v); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // fetchUserFromRepository fetches user by email or id
-func fetchUserFromRepository(c context.Context, identity string, repo *repository.Repo) users.UserReadResult {
+func fetchUserFromRepository(
+	c context.Context,
+	identity string,
+	repo *repository.Repo,
+) users.UserReadResult {
 	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
 		return repo.UserReadByEmail(c, email)
 	} else {

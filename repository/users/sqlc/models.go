@@ -13,6 +13,8 @@ import (
 type User struct {
 	ID         uuid.UUID `json:"id"`
 	Email      string    `json:"email"`
+	Username   string    `json:"username"`
+	Password   string    `json:"password"`
 	Verified   bool      `json:"verified"`
 	Blocked    bool      `json:"blocked"`
 	Provider   string    `json:"provider"`

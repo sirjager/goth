@@ -36,47 +36,49 @@ func (rec *ResponseRecorder) Write(b []byte) (int, error) {
 	return rec.ResponseWriter.Write(b)
 }
 
-func ChiCustomLogger(logr zerolog.Logger, config logger.Config, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now() // Start timer
-		path := r.URL.Path
+func Logger(logr zerolog.Logger, config logger.Config) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now() // Start timer
+			path := r.URL.Path
 
-		rec := &ResponseRecorder{ResponseWriter: w, StatusCode: 200, Body: &bytes.Buffer{}}
-		next.ServeHTTP(rec, r)
+			rec := &ResponseRecorder{ResponseWriter: w, StatusCode: 200, Body: &bytes.Buffer{}}
+			next.ServeHTTP(rec, r)
 
-		duration := time.Since(start)
-		event := logr.Info()
+			duration := time.Since(start)
+			event := logr.Info()
 
-		if rec.StatusCode != http.StatusOK {
-			var data map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &data); err != nil {
-				data = map[string]interface{}{}
+			if rec.StatusCode != http.StatusOK {
+				var data map[string]interface{}
+				if err := json.Unmarshal(rec.Body.Bytes(), &data); err != nil {
+					data = map[string]interface{}{}
+				}
+				event = logr.Error().Interface("error", data["message"])
 			}
-			event = logr.Error().Interface("error", data["message"])
-		}
 
-		if rec.StatusCode >= 400 && rec.StatusCode < 500 {
-			event = logr.Warn()
-		} else if rec.StatusCode >= 500 {
-			event = logr.Error()
-		}
+			if rec.StatusCode >= 400 && rec.StatusCode < 500 {
+				event = logr.Warn()
+			} else if rec.StatusCode >= 500 {
+				event = logr.Error()
+			}
 
-		shortenedPath := shortenPath(path, 20)
-		icon := getIcon(rec.StatusCode)
-		coloredIcon := getColoredIcon(rec.StatusCode)
+			shortenedPath := shortenPath(path, 20)
+			icon := getIcon(rec.StatusCode)
+			coloredIcon := getColoredIcon(rec.StatusCode)
 
-		event.
-			Str("method", r.Method).
-			Str("path", shortenedPath).
-			Dur("latency", duration).
-			Int("code", rec.StatusCode)
+			event.
+				Str("method", r.Method).
+				Str("path", shortenedPath).
+				Dur("latency", duration).
+				Int("code", rec.StatusCode)
 
-		if config.Logfile != "" {
-			event.Msg(icon)
-		} else {
-			event.Msg(coloredIcon)
-		}
-	})
+			if config.Logfile != "" {
+				event.Msg(icon)
+			} else {
+				event.Msg(coloredIcon)
+			}
+		})
+	}
 }
 
 func getIcon(code int) string {

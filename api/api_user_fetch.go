@@ -5,12 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/sirjager/goth/entity"
 	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository/users"
 )
 
 type UserResponse struct {
-	User User `json:"user,omitempty"`
+	User *entity.Profile `json:"user,omitempty"`
 } //	@name	UserResponse
 
 // @Summary		Single User
@@ -18,7 +19,7 @@ type UserResponse struct {
 // @Tags			Resources
 // @Produce		json
 // @Param			identity	path		string			true	"Identity can either be email or id"
-// @Success		200			{object}	UserResponse	"User Response"
+// @Success		200			{object}	UserResponse	"UserResponse"
 // @Router			/users/{identity} [get]
 func (a *API) UserGet(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
@@ -38,12 +39,12 @@ func (a *API) UserGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// resolved master role request
-	response := UserResponse{EntityToUser(result.User)}
+	response := UserResponse{result.User.Profile()}
 	a.Success(w, response, result.StatusCode)
 }
 
 type UsersResponse struct {
-	Users []User `json:"users"`
+	Users []*entity.Profile `json:"users"`
 } //	@name	UsersResponse
 
 // @Summary		Multiple Users
@@ -52,7 +53,7 @@ type UsersResponse struct {
 // @Produce		json
 // @Param			page	query		int				false	"Page number: Default 1"
 // @Param			limit	query		int				false	"Per Page: Default 100"
-// @Success		200		{object}	UsersResponse	"Users Response"
+// @Success		200		{object}	UsersResponse	"UsersResponse"
 // @Router			/users [get]
 func (a *API) UsersGet(w http.ResponseWriter, r *http.Request) {
 	page := 1
@@ -64,6 +65,6 @@ func (a *API) UsersGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := UsersResponse{EntitiesToUsers(result.Users)}
+	response := UsersResponse{EntitiesToProfiles(result.Users)}
 	a.Success(w, response, result.StatusCode)
 }

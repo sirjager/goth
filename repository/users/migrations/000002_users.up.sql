@@ -2,6 +2,8 @@ CREATE TABLE "users" (
   "id" UUID PRIMARY KEY DEFAULT (uuid_generate_v4()),
 
   "email" VARCHAR(255) UNIQUE NOT NULL,
+  "username" VARCHAR(255) UNIQUE NOT NULL,
+  "password" TEXT NOT NULL DEFAULT '',
   "verified" BOOL NOT NULL DEFAULT false,
   "blocked" BOOL NOT NULL DEFAULT false,
 

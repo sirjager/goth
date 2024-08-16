@@ -15,6 +15,7 @@ type Querier interface {
 	UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	UserRead(ctx context.Context, id uuid.UUID) (User, error)
 	UserReadByEmail(ctx context.Context, email string) (User, error)
+	UserReadByUsername(ctx context.Context, username string) (User, error)
 	UserReadMaster(ctx context.Context) (User, error)
 	UserUpdate(ctx context.Context, arg UserUpdateParams) (User, error)
 	UsersRead(ctx context.Context, arg UsersReadParams) ([]User, error)
