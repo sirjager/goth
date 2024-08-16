@@ -57,41 +57,31 @@ type UserReadResult struct {
 }
 
 func (r *UserRepo) UserReadByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
-	dbuser, err := r.store.UserRead(ctx, userID.Value())
-	if err != nil {
-		res.StatusCode = http.StatusInternalServerError
-		res.Error = err
-		if isRecordNotFound(err) {
-			res.StatusCode = http.StatusNotFound
-			res.Error = repoerrors.ErrUserNotFound
-			return
-		}
-		return
-	}
-	res.StatusCode = http.StatusOK
-	res.User = r.ToUserEntity(dbuser)
-	return
+	return r.userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserRead(ctx, userID.Value())
+	})
 }
 
 func (r *UserRepo) UserReadByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
-	dbuser, err := r.store.UserReadByEmail(ctx, email.Value())
-	if err != nil {
-		res.StatusCode = http.StatusInternalServerError
-		res.Error = err
-		if isRecordNotFound(err) {
-			res.StatusCode = http.StatusNotFound
-			res.Error = repoerrors.ErrUserNotFound
-			return
-		}
-		return
-	}
-	res.StatusCode = http.StatusOK
-	res.User = r.ToUserEntity(dbuser)
-	return
+	return r.userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadByEmail(ctx, email.Value())
+	})
+}
+
+func (r *UserRepo) UserReadByUsername(ctx context.Context, u *vo.Username) (res UserReadResult) {
+	return r.userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadByUsername(ctx, u.Value())
+	})
 }
 
 func (r *UserRepo) UserReadMaster(ctx context.Context) (res UserReadResult) {
-	dbuser, err := r.store.UserReadMaster(ctx)
+	return r.userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadMaster(ctx)
+	})
+}
+
+func (r *UserRepo) userReadCommon(call func() (sqlc.User, error)) (res UserReadResult) {
+	dbuser, err := call()
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError
 		res.Error = err

@@ -10,6 +10,8 @@ func (r *UserRepo) ToUserEntity(dbUser sqlc.User) *entity.User {
 	return &entity.User{
 		ID:         vo.MustParseID(dbUser.ID.String()),
 		Email:      vo.MustParseEmail(dbUser.Email),
+		Username:   vo.MustParseUsername(dbUser.Username),
+		Password:   vo.MustParseHashedPassword(dbUser.Password),
 		Verified:   dbUser.Verified,
 		Blocked:    dbUser.Blocked,
 		Provider:   dbUser.Provider,

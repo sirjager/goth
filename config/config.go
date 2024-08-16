@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -12,16 +13,17 @@ import (
 
 // Config represents the application configuration.
 type Config struct {
-	StartTime   time.Time
-	Logger      logger.Config
-	ServiceName string `mapstructure:"SERVICE_NAME"`
-	ServerName  string `mapstructure:"SERVER_NAME"`
-	Host        string `mapstructure:"HOST"`
-	RedisURL    string `mapstructure:"REDIS_URL"`
-	PostgresURL string `mapstructure:"POSTGRES_URL"` 
-	SecretKey   string `mapstructure:"SECRET_KEY"`
-	OAuth       oauth.Config
-	RESTPort    int `mapstructure:"REST_PORT"`
+	StartTime     time.Time
+	Logger        logger.Config
+	ServiceName   string `mapstructure:"SERVICE_NAME"`
+	ServerName    string `mapstructure:"SERVER_NAME"`
+	Host          string `mapstructure:"HOST"`
+	RedisURL      string `mapstructure:"REDIS_URL"`
+	RedisURLShort string
+	PostgresURL   string `mapstructure:"POSTGRES_URL"`
+	SecretKey     string `mapstructure:"SECRET_KEY"`
+	OAuth         oauth.Config
+	RESTPort      int `mapstructure:"REST_PORT"`
 }
 
 // LoadConfigs loads the configuration from the specified YAML file.
@@ -63,6 +65,7 @@ func LoadConfigs(path string, name string, startTime time.Time) (config Config, 
 	}
 
 	config.StartTime = startTime
+	config.RedisURLShort = strings.Split(config.RedisURL, "@")[1]
 
 	return
 }

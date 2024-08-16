@@ -14,16 +14,16 @@ type UpdateUserParams struct {
 	LastName   string `json:"last_name,omitempty"   validate:"max=30"`
 	Name       string `json:"name,omitempty"        validate:"max=100"`
 	PictureURL string `json:"picture_url,omitempty" validate:""`
-} // @name UserUpdateParams
+} //	@name	UpdateUserParams
 
-// @Summary		Update User
-// @Description	Partially Update User
-// @Tags			Resources
-// @Produce		json
-// @Param			identity	path		string				true	"Identity can either be email or id"
-// @Param			body		body		UpdateUserParams	true	"Update User Params"
-// @Success		200			{object}	UserResponse		"User Response"
-// @Router			/users/{identity} [patch]
+//	@Summary		Update User
+//	@Description	Partially Update User
+//	@Tags			Resources
+//	@Produce		json
+//	@Param			identity	path	string				true	"Identity can either be email or id"
+//	@Param			body		body	UpdateUserParams	true	"Update User Params"
+//	@Router			/users/{identity} [patch]
+//	@Success		200	{object}	UserResponse	"UserResponse"
 func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	identity := chi.URLParam(r, "identity")
@@ -56,7 +56,7 @@ func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
 		target = result.User
 	}
 
-	response := UserResponse{EntityToUser(target)}
+	response := UserResponse{target.Profile()}
 	a.Success(w, response)
 }
 

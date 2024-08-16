@@ -64,16 +64,58 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/logout/{provider}": {
+        "/auth/signin": {
             "get": {
-                "description": "Logout from a provider",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Signin using email and password",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Logout",
+                "summary": "Signin",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns User in body",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns AccessToken, RefreshToken and SessionID in body",
+                        "name": "cookies",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SignInResponse",
+                        "schema": {
+                            "$ref": "#/definitions/SignInResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signout/{provider}": {
+            "get": {
+                "description": "Signout from a provider",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Signout",
                 "parameters": [
                     {
                         "type": "string",
@@ -84,6 +126,60 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "Signup using email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Signup",
+                "parameters": [
+                    {
+                        "description": "Signup request params",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SignUpRequestParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User object",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/user": {
+            "get": {
+                "description": "Returns Authenticated User",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User",
+                "responses": {
+                    "200": {
+                        "description": "UserResponse",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
             }
         },
         "/auth/{provider}": {
@@ -107,7 +203,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "User Response",
+                        "description": "User object",
                         "schema": {
                             "$ref": "#/definitions/UserResponse"
                         }
@@ -160,7 +256,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Users Response",
+                        "description": "UsersResponse",
                         "schema": {
                             "$ref": "#/definitions/UsersResponse"
                         }
@@ -189,7 +285,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "User Response",
+                        "description": "UserResponse",
                         "schema": {
                             "$ref": "#/definitions/UserResponse"
                         }
@@ -219,13 +315,13 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserUpdateParams"
+                            "$ref": "#/definitions/UpdateUserParams"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User Response",
+                        "description": "UserResponse",
                         "schema": {
                             "$ref": "#/definitions/UserResponse"
                         }
@@ -254,6 +350,60 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uptime": {
+                    "type": "string"
+                }
+            }
+        },
+        "SignInResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "SignUpRequestParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateUserParams": {
+            "type": "object",
+            "properties": {
+                "first_name": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "last_name": {
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "picture_url": {
                     "type": "string"
                 }
             }
@@ -288,6 +438,9 @@ const docTemplate = `{
                 "updated_at": {
                     "type": "string"
                 },
+                "username": {
+                    "type": "string"
+                },
                 "verified": {
                     "type": "boolean"
                 }
@@ -298,26 +451,6 @@ const docTemplate = `{
             "properties": {
                 "user": {
                     "$ref": "#/definitions/User"
-                }
-            }
-        },
-        "UserUpdateParams": {
-            "type": "object",
-            "properties": {
-                "first_name": {
-                    "type": "string",
-                    "maxLength": 30
-                },
-                "last_name": {
-                    "type": "string",
-                    "maxLength": 30
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "picture_url": {
-                    "type": "string"
                 }
             }
         },
@@ -342,6 +475,11 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
         }
     }
 }`

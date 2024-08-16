@@ -1,0 +1,10 @@
+---
+linters-settings:
+  staticcheck:
+    checks:
+      # Disabling specific staticcheck warnings
+[-SA1029]
+linters:
+  disable: [staticcheck]
+run:
+  enable: [staticcheck]

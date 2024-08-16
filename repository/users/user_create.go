@@ -21,6 +21,8 @@ func (r *UserRepo) UserCreate(c context.Context, u *entity.User) (res UserReadRe
 	dbuser, err := r.store.UserCreate(c, sqlc.UserCreateParams{
 		ID:         uuid.New(),
 		Email:      u.Email.Value(),
+		Password:   u.Password.Value(),
+		Username:   u.Username.Value(),
 		Verified:   u.Verified,
 		Blocked:    u.Blocked,
 		Provider:   u.Provider,

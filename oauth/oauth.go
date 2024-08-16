@@ -51,9 +51,10 @@ func (o *OAuth) InitializeRedisStore(address, secretKey string) (err error) {
 
 	c := o.config
 	gothic.Store = o.store
+
 	goth.UseProviders(
 		google.New(c.GoogleClientID, c.GoogleClientSecret, callbackURL(o, "google")),
-		github.New(c.GithubClientID, c.GithubClientSecret, callbackURL(o, "github")),
+		github.New(c.GithubClientID, c.GithubClientSecret, callbackURL(o, "github"), "user:email"),
 	)
 	return
 }

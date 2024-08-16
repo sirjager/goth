@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -15,8 +14,9 @@ import (
 )
 
 func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
-	provider := chi.URLParam(r, "provider")
+	redirectURL := gothic.GetState(r) // set by AuthProvider, original url of calling client
 
+	provider := chi.URLParam(r, "provider")
 	req := r.WithContext(context.WithValue(r.Context(), "provider", provider))
 
 	gothUser, err := gothic.CompleteUserAuth(w, req)
@@ -45,7 +45,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	if result.Error != nil {
 		// if its not, user already exits error, return it
 		if result.StatusCode != http.StatusConflict {
-			http.Error(w, result.Error.Error(), result.StatusCode)
+			a.Failure(w, result.Error, result.StatusCode)
 			return
 		}
 		// if its user already exits error, get user and return it
@@ -53,7 +53,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if result.Error != nil {
-		http.Error(w, result.Error.Error(), result.StatusCode)
+		a.Failure(w, result.Error, result.StatusCode)
 		return
 	}
 
@@ -63,14 +63,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	response := UserResponse{User: EntityToUser(result.User)}
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 // StoreUserSession stores the user in the cookies

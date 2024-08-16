@@ -15,18 +15,20 @@ import (
 
 const userCreate = `-- name: UserCreate :one
 INSERT INTO "users" (
-  id, email, verified, blocked,
+  id, email,username,password, verified, blocked,
   provider,google_id,
   name,first_name,last_name,nick_name,
   avatar_url,picture_url,location,master,
   created_at,updated_at
 ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
 `
 
 type UserCreateParams struct {
 	ID         uuid.UUID `json:"id"`
 	Email      string    `json:"email"`
+	Username   string    `json:"username"`
+	Password   string    `json:"password"`
 	Verified   bool      `json:"verified"`
 	Blocked    bool      `json:"blocked"`
 	Provider   string    `json:"provider"`
@@ -47,6 +49,8 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 	row := q.db.QueryRow(ctx, userCreate,
 		arg.ID,
 		arg.Email,
+		arg.Username,
+		arg.Password,
 		arg.Verified,
 		arg.Blocked,
 		arg.Provider,
@@ -66,6 +70,8 @@ func (q *Queries) UserCreate(ctx context.Context, arg UserCreateParams) (User, e
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
+		&i.Username,
+		&i.Password,
 		&i.Verified,
 		&i.Blocked,
 		&i.Provider,
@@ -95,7 +101,7 @@ func (q *Queries) UserDelete(ctx context.Context, id uuid.UUID) (uuid.UUID, erro
 }
 
 const userRead = `-- name: UserRead :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where id = $1 limit 1
+select id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where id = $1 limit 1
 `
 
 func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
@@ -104,6 +110,8 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
+		&i.Username,
+		&i.Password,
 		&i.Verified,
 		&i.Blocked,
 		&i.Provider,
@@ -123,7 +131,7 @@ func (q *Queries) UserRead(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const userReadByEmail = `-- name: UserReadByEmail :one
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where email = $1 limit 1
+select id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where email = $1 limit 1
 `
 
 func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, error) {
@@ -132,6 +140,38 @@ func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, erro
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
+		&i.Username,
+		&i.Password,
+		&i.Verified,
+		&i.Blocked,
+		&i.Provider,
+		&i.GoogleID,
+		&i.Name,
+		&i.FirstName,
+		&i.LastName,
+		&i.NickName,
+		&i.AvatarUrl,
+		&i.PictureUrl,
+		&i.Location,
+		&i.Master,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const userReadByUsername = `-- name: UserReadByUsername :one
+select id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" where username = $1 limit 1
+`
+
+func (q *Queries) UserReadByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, userReadByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.Password,
 		&i.Verified,
 		&i.Blocked,
 		&i.Provider,
@@ -151,7 +191,7 @@ func (q *Queries) UserReadByEmail(ctx context.Context, email string) (User, erro
 }
 
 const userReadMaster = `-- name: UserReadMaster :one
-SELECT id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at FROM "users" where master = true LIMIT 1
+SELECT id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at FROM "users" where master = true LIMIT 1
 `
 
 func (q *Queries) UserReadMaster(ctx context.Context) (User, error) {
@@ -160,6 +200,8 @@ func (q *Queries) UserReadMaster(ctx context.Context) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
+		&i.Username,
+		&i.Password,
 		&i.Verified,
 		&i.Blocked,
 		&i.Provider,
@@ -186,7 +228,7 @@ UPDATE "users" SET
   nick_name = $4,
   picture_url = $5,
   avatar_url = $6
-WHERE id = $7 RETURNING id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
+WHERE id = $7 RETURNING id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at
 `
 
 type UserUpdateParams struct {
@@ -213,6 +255,8 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
+		&i.Username,
+		&i.Password,
 		&i.Verified,
 		&i.Blocked,
 		&i.Provider,
@@ -232,7 +276,7 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 }
 
 const usersRead = `-- name: UsersRead :many
-select id, email, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" limit $2 offset $1
+select id, email, username, password, verified, blocked, provider, google_id, name, first_name, last_name, nick_name, avatar_url, picture_url, location, master, created_at, updated_at from "users" limit $2 offset $1
 `
 
 type UsersReadParams struct {
@@ -252,6 +296,8 @@ func (q *Queries) UsersRead(ctx context.Context, arg UsersReadParams) ([]User, e
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,
+			&i.Username,
+			&i.Password,
 			&i.Verified,
 			&i.Blocked,
 			&i.Provider,

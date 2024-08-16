@@ -2,19 +2,7 @@ package mw
 
 import (
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/sirjager/gopkg/utils"
 )
-
-// IsCurrentUserIdentity returns if identity params matches authorized user identity
-// It matches email,user_id, "me" with /{identity} params.
-func IsCurrentUserIdentity(r *http.Request) bool {
-	user := UserOrPanic(r)
-	identity := chi.URLParam(r, "identity")
-	currentUserIdentities := []string{"me", user.Email.Value(), user.ID.Value().String()}
-	return utils.ValueExist(identity, currentUserIdentities)
-}
 
 // RequiresPermissions ensures that user requesting resource has permissions to access it.
 // User with master role can access this route

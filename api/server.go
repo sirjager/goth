@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
+	"github.com/sirjager/gopkg/cache"
+	"github.com/sirjager/gopkg/tokens"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sirjager/goth/config"
@@ -16,19 +18,29 @@ import (
 
 type API struct {
 	logr     zerolog.Logger
+	cache    cache.Cache
+	tokens   tokens.TokenBuilder
 	router   *chi.Mux
 	repo     *repository.Repo
 	validate *validator.Validate
 	config   config.Config
 }
 
-func NewServer(repo *repository.Repo, logr zerolog.Logger, config config.Config) *API {
+func NewServer(
+	repo *repository.Repo,
+	logr zerolog.Logger,
+	config config.Config,
+	cache cache.Cache,
+	tokens tokens.TokenBuilder,
+) *API {
 	validator := validator.New(validator.WithRequiredStructEnabled())
 	server := &API{
-		logr:      logr,
-		config:    config,
-		repo:      repo,
+		logr:     logr,
+		config:   config,
+		repo:     repo,
 		validate: validator,
+		tokens:   tokens,
+		cache:    cache,
 	}
 	server.setupRouter()
 	return server
