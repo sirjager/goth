@@ -18,13 +18,13 @@ const (
 	ValidationEnable  Validation = true
 )
 
-func (a *API) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
+func (a *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
 	for _, cookie := range cookies {
 		http.SetCookie(w, cookie)
 	}
 }
 
-func (a *API) Failure(w http.ResponseWriter, err error, statusCode ...int) {
+func (a *Server) Failure(w http.ResponseWriter, err error, statusCode ...int) {
 	status := 500
 	if len(statusCode) == 1 {
 		status = statusCode[0]
@@ -32,7 +32,23 @@ func (a *API) Failure(w http.ResponseWriter, err error, statusCode ...int) {
 	http.Error(w, err.Error(), status)
 }
 
-func (a *API) Success(w http.ResponseWriter, response any, statusCode ...int) {
+func (a *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...int) {
+	_message := "OK"
+	if message != "" {
+		_message = message
+	}
+	status := 200
+	if len(statusCode) == 1 {
+		status = statusCode[0]
+	}
+	w.Header().Add("Content-Type", "text/plain")
+	w.WriteHeader(status)
+	if _, err := w.Write([]byte(_message)); err != nil {
+		a.Failure(w, err)
+	}
+}
+
+func (a *Server) Success(w http.ResponseWriter, response any, statusCode ...int) {
 	status := 200
 	if len(statusCode) == 1 {
 		status = statusCode[0]
@@ -44,7 +60,7 @@ func (a *API) Success(w http.ResponseWriter, response any, statusCode ...int) {
 	}
 }
 
-func (a *API) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
+func (a *Server) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
 	pageParam := r.URL.Query().Get("page")
 	limitParam := r.URL.Query().Get("limit")
 	if (pageParam) != "" {
@@ -59,14 +75,14 @@ func (a *API) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLi
 	}
 }
 
-func (a *API) ParseJSON(r *http.Request, v interface{}) error {
+func (a *Server) ParseJSON(r *http.Request, v interface{}) error {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a *API) ParseAndValidate(r *http.Request, v interface{}, validation ...Validation) error {
+func (a *Server) ParseAndValidate(r *http.Request, v interface{}, validation ...Validation) error {
 	validate := ValidationEnable
 	if len(validation) == 1 {
 		validate = validation[0]
@@ -86,11 +102,11 @@ func (a *API) ParseAndValidate(r *http.Request, v interface{}, validation ...Val
 func fetchUserFromRepository(
 	c context.Context,
 	identity string,
-	repo *repository.Repo,
+	repo repository.Repository,
 ) users.UserReadResult {
 	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
-		return repo.UserReadByEmail(c, email)
+		return repo.UserGetByEmail(c, email)
 	} else {
-		return repo.UserReadByID(c, vo.MustParseID(identity))
+		return repo.UserGetByID(c, vo.MustParseID(identity))
 	}
 }

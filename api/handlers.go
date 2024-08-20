@@ -7,30 +7,36 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 )
 
-func (a *API) setupRouter() {
+func (a *Server) MountHandlers() {
 	c := chi.NewRouter()
 	defer func() { a.router = c }()
 
-	// c.Use(mw.Logger(a.logr, a.config.Logger))
+	c.Use(mw.Logger(a.logr, a.config))
 	c.Use(mw.UseCors())
 	c.Use(mw.RequestID())
 	c.Use(middleware.Compress(5))
 	c.Use(middleware.RealIP)
 	c.Use(middleware.Recoverer)
 
-	c.Get("/", a.SysWelcome)
-	c.Get("/health", a.SysHealth)
-	c.Get("/swagger", a.SysDocs)
+	c.Get("/", a.Welcome)
+	c.Get("/health", a.Health)
+	c.Get("/swagger", a.SwaggerDocs)
 
 	// NOTE: Authentication routes
 	c.Route("/auth", func(r chi.Router) {
-		r.With(mw.RequiresAuth(a.repo, a.tokens, a.cache)).Get("/user", a.AuthUser)
 		r.Get("/signin", a.Signin)
 		r.Post("/signup", a.Signup)
-		r.Get("/signout/{provider}", a.Signout)
+		r.Get("/verify", a.VerifyEmail)
 
-		r.Get("/{provider}", a.AuthProvider)
-		r.Get("/{provider}/callback", a.AuthCallback)
+		r.With(mw.RequiresAuth(a.repo, a.tokens, a.cache), mw.RequiresVerified()).
+			Get("/user", a.AuthUser)
+
+		r.With(mw.RequiresAuth(a.repo, a.tokens, a.cache, true), mw.RequiresVerified()).
+			Get("/refresh", a.RefreshToken)
+
+		r.Get("/signout/{provider}", a.Signout)
+		r.Get("/{provider}", a.OAuthProvider)
+		r.Get("/{provider}/callback", a.OAuthCallback)
 	})
 
 	c.Route("/users", func(r chi.Router) {
@@ -42,7 +48,7 @@ func (a *API) setupRouter() {
 
 	c.Route("/users/{identity}", func(r chi.Router) {
 		r.Use(mw.RequiresAuth(a.repo, a.tokens, a.cache))
-		r.Use(mw.RequiresVerified())
+		// r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresPermissions())
 
 		r.Get("/", a.UserGet)

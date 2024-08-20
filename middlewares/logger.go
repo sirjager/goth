@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
 
-	"github.com/sirjager/goth/logger"
+	"github.com/sirjager/goth/config"
 )
 
 const (
@@ -36,7 +37,7 @@ func (rec *ResponseRecorder) Write(b []byte) (int, error) {
 	return rec.ResponseWriter.Write(b)
 }
 
-func Logger(logr zerolog.Logger, config logger.Config) func(next http.Handler) http.Handler {
+func Logger(logr zerolog.Logger, config *config.Config) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now() // Start timer
@@ -72,10 +73,14 @@ func Logger(logr zerolog.Logger, config logger.Config) func(next http.Handler) h
 				Dur("latency", duration).
 				Int("code", rec.StatusCode)
 
-			if config.Logfile != "" {
+			if config.LoggerLogfile != "" {
 				event.Msg(icon)
 			} else {
-				event.Msg(coloredIcon)
+				if strings.Contains(config.GoEnv, "test") || strings.Contains(config.GoEnv, "prod") {
+					event.Msg(icon)
+				} else {
+					event.Msg(coloredIcon)
+				}
 			}
 		})
 	}

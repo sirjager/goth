@@ -12,7 +12,7 @@ import (
 //	@Produce		json
 //	@Success		200	{object}	UserResponse	"UserResponse"
 //	@Router			/auth/user [get]
-func (a *API) AuthUser(w http.ResponseWriter, r *http.Request) {
+func (a *Server) AuthUser(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	response := UserResponse{user.Profile()}
 	a.Success(w, response)

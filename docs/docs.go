@@ -41,29 +41,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/SysHealth": {
-            "get": {
-                "description": "Health Check",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "System"
-                ],
-                "summary": "Health",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/HealthResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/signin": {
             "get": {
                 "security": [
@@ -71,7 +48,7 @@ const docTemplate = `{
                         "BasicAuth": []
                     }
                 ],
-                "description": "Signin using email and password",
+                "description": "Signin using credentials",
                 "consumes": [
                     "application/json"
                 ],
@@ -182,20 +159,62 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/{provider}": {
-            "get": {
-                "description": "Authenticates a user with a specified provider",
+        "/auth/verify": {
+            "post": {
+                "description": "Email Verification",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Login",
+                "summary": "Verify",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Provider Name",
+                        "description": "Email to verify",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email verification code if already have any",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "EmailVerificationResponse",
+                        "schema": {
+                            "$ref": "#/definitions/EmailVerificationResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/{provider}": {
+            "get": {
+                "description": "Authenticates a user with a specified oauth provider",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "OAuth",
+                "parameters": [
+                    {
+                        "enum": [
+                            "google",
+                            "github"
+                        ],
+                        "type": "string",
+                        "description": "OAuth provider name",
                         "name": "provider",
                         "in": "path",
                         "required": true
@@ -206,6 +225,29 @@ const docTemplate = `{
                         "description": "User object",
                         "schema": {
                             "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Health Check",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/HealthResponse"
                         }
                     }
                 }
@@ -331,6 +373,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "EmailVerificationResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "HealthResponse": {
             "type": "object",
             "properties": {
@@ -357,16 +407,16 @@ const docTemplate = `{
         "SignInResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
+                "accessToken": {
                     "type": "string"
                 },
                 "message": {
                     "type": "string"
                 },
-                "refresh_token": {
+                "refreshToken": {
                     "type": "string"
                 },
-                "session_id": {
+                "sessionID": {
                     "type": "string"
                 },
                 "user": {
@@ -376,6 +426,11 @@ const docTemplate = `{
         },
         "SignUpRequestParams": {
             "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
             "properties": {
                 "email": {
                     "type": "string"
@@ -391,19 +446,25 @@ const docTemplate = `{
         "UpdateUserParams": {
             "type": "object",
             "properties": {
-                "first_name": {
-                    "type": "string",
-                    "maxLength": 30
+                "email": {
+                    "type": "string"
                 },
-                "last_name": {
-                    "type": "string",
-                    "maxLength": 30
+                "firstName": {
+                    "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 100
+                "fullName": {
+                    "type": "string"
                 },
-                "picture_url": {
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "pictureURL": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -414,28 +475,28 @@ const docTemplate = `{
                 "blocked": {
                     "type": "boolean"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "email": {
                     "type": "string"
                 },
-                "first_name": {
+                "firstName": {
+                    "type": "string"
+                },
+                "fullName": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "last_name": {
+                "lastName": {
                     "type": "string"
                 },
-                "name": {
+                "pictureURL": {
                     "type": "string"
                 },
-                "picture_url": {
-                    "type": "string"
-                },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string"
                 },
                 "username": {

@@ -19,12 +19,17 @@ type (
 )
 
 const (
+	CookieSessionID     = "sessionId"
+	CookieAccessToken   = "accessToken"
+	CookieRefreshToken  = "refreshToken"
+	CookieGothicSession = CookieAccessToken
+)
+
+const (
 	AuthProviderOAuth   AuthProvder = "oauth"
 	AuthProviderTokens  AuthProvder = "tokens"
 	ContextAuthProvider AuthProvder = "ctx_auth_provider"
-
-	SessionCookieName string      = "_gothic_session"
-	ContextKeyUser    contextType = "ctx_authenticated_user"
+	ContextKeyUser      contextType = "ctx_authenticated_user"
 )
 
 // UserOrPanic assert that the user is authenticated, set by RequiresAuth middleware
@@ -38,9 +43,10 @@ func UserOrPanic(r *http.Request) *entity.User {
 
 // RequiresAuth authenticates the request and adds the user to the context
 func RequiresAuth(
-	repo *repository.Repo,
+	repo repository.Repository,
 	tokens tokens.TokenBuilder,
 	cache cache.Cache,
+	allowRefreshToken ...bool,
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +56,7 @@ func RequiresAuth(
 			user, err = authenticateUsingOAuth(r, repo)
 			if err != nil {
 				provider = AuthProviderTokens
-				user, err = authenticateUsingTokens(r, repo, cache, tokens)
+				user, err = authenticateUsingTokens(r, repo, cache, tokens, allowRefreshToken...)
 			}
 
 			if err != nil {
@@ -69,7 +75,7 @@ func RequiresAuth(
 // `true if logged in` else `false if not logged in`
 func IsAuthenticated(
 	r *http.Request,
-	repo *repository.Repo,
+	repo repository.Repository,
 	tokens tokens.TokenBuilder,
 	cache cache.Cache,
 ) (*entity.User, bool) {

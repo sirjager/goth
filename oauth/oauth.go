@@ -3,7 +3,6 @@ package oauth
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
@@ -12,25 +11,18 @@ import (
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/boj/redistore.v1"
-)
 
-type Config struct {
-	GoogleClientID     string        `mapstructure:"GOOGLE_CLIENT_ID"`
-	GoogleClientSecret string        `mapstructure:"GOOGLE_CLIENT_SECRET"`
-	GithubClientID     string        `mapstructure:"GITHUB_CLIENT_ID"`
-	GithubClientSecret string        `mapstructure:"GITHUB_CLIENT_SECRET"`
-	SessionsMaxAge     time.Duration `mapstructure:"SESSIONS_MAX_AGE"`
-	SecureCookies      bool          `mapstructure:"SECURE_COOKIES"`
-}
+	"github.com/sirjager/goth/config"
+)
 
 type OAuth struct {
 	logr     zerolog.Logger
 	store    *redistore.RediStore
+	config   *config.Config
 	redirect string
-	config   Config
 }
 
-func NewOAuth(redirect string, config Config, logr zerolog.Logger) *OAuth {
+func NewOAuth(redirect string, config *config.Config, logr zerolog.Logger) *OAuth {
 	return &OAuth{
 		config:   config,
 		logr:     logr,
@@ -44,8 +36,8 @@ func (o *OAuth) InitializeRedisStore(address, secretKey string) (err error) {
 		return err
 	}
 	store.Options.HttpOnly = true
-	store.Options.Secure = o.config.SecureCookies
-	store.SetMaxAge(int(o.config.SessionsMaxAge.Seconds()))
+	store.Options.Secure = o.config.AuthSecureCookies
+	store.SetMaxAge(int(o.config.AuthOAuthTokensExpire.Seconds()))
 
 	o.store = store
 
@@ -53,8 +45,13 @@ func (o *OAuth) InitializeRedisStore(address, secretKey string) (err error) {
 	gothic.Store = o.store
 
 	goth.UseProviders(
-		google.New(c.GoogleClientID, c.GoogleClientSecret, callbackURL(o, "google")),
-		github.New(c.GithubClientID, c.GithubClientSecret, callbackURL(o, "github"), "user:email"),
+		google.New(c.AuthGoogleClientID, c.AuthGoogleClientSecret, callback(o, "google")),
+		github.New(
+			c.AuthGithubClientID,
+			c.AuthGithubClientSecret,
+			callback(o, "github"),
+			"user:email",
+		),
 	)
 	return
 }
@@ -73,6 +70,6 @@ func (o *OAuth) Close(ctx context.Context, wg *errgroup.Group) {
 	})
 }
 
-func callbackURL(o *OAuth, provider string) string {
+func callback(o *OAuth, provider string) string {
 	return fmt.Sprintf("%s/auth/%s/callback", o.redirect, provider)
 }

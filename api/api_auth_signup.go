@@ -8,9 +8,9 @@ import (
 )
 
 type SignUpRequestParams struct {
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
+	Username string `json:"username,omitempty" validate:"required"`
+	Email    string `json:"email,omitempty"    validate:"required"`
+	Password string `json:"password,omitempty" validate:"required"`
 } // @name SignUpRequestParams
 
 // Signup Request
@@ -23,26 +23,28 @@ type SignUpRequestParams struct {
 //	@Router			/auth/signup [post]
 //	@Param			body	body		SignUpRequestParams	true	"Signup request params"
 //	@Success		201		{object}	UserResponse		"User object"
-func (a *API) Signup(w http.ResponseWriter, r *http.Request) {
+func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	var params SignUpRequestParams
-	if err := a.ParseAndValidate(r, &params, ValidationDisable); err != nil {
-		a.Failure(w, err)
+	if err := a.ParseAndValidate(r, &params); err != nil {
+		a.Failure(w, err, http.StatusBadRequest)
 		return
 	}
 
-	username, err := vo.NewUsername(params.Username)
-	if err != nil {
-		a.Failure(w, err)
-		return
-	}
+	var username *vo.Username
+
 	email, err := vo.NewEmail(params.Email)
 	if err != nil {
-		a.Failure(w, err)
+		a.Failure(w, err, http.StatusBadRequest)
 		return
 	}
 	password, err := vo.NewPassword(params.Password)
 	if err != nil {
-		a.Failure(w, err)
+		a.Failure(w, err, http.StatusBadRequest)
+		return
+	}
+	username, err = vo.NewUsername(params.Username)
+	if err != nil {
+		a.Failure(w, err, http.StatusBadRequest)
 		return
 	}
 

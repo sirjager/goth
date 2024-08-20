@@ -21,7 +21,7 @@ type UserResponse struct {
 // @Param			identity	path		string			true	"Identity can either be email or id"
 // @Success		200			{object}	UserResponse	"UserResponse"
 // @Router			/users/{identity} [get]
-func (a *API) UserGet(w http.ResponseWriter, r *http.Request) {
+func (a *Server) UserGet(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	identity := chi.URLParam(r, "identity")
 	var result users.UserReadResult
@@ -55,11 +55,11 @@ type UsersResponse struct {
 // @Param			limit	query		int				false	"Per Page: Default 100"
 // @Success		200		{object}	UsersResponse	"UsersResponse"
 // @Router			/users [get]
-func (a *API) UsersGet(w http.ResponseWriter, r *http.Request) {
+func (a *Server) UsersGet(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 100
 	a.GetPageAndLimitFromRequest(r, &page, &limit)
-	result := a.repo.UsersRead(r.Context(), limit, page)
+	result := a.repo.UserGetAll(r.Context(), limit, page)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), result.StatusCode)
 		return

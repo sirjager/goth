@@ -22,9 +22,9 @@ type healthResponse struct {
 // @Tags			System
 // @Accept			json
 // @Produce		json
-// @Router			/SysHealth [get]
+// @Router			/health [get]
 // @Success		200	{object}	healthResponse
-func (a *API) SysHealth(w http.ResponseWriter, r *http.Request) {
+func (a *Server) Health(w http.ResponseWriter, r *http.Request) {
 	response := healthResponse{
 		Timestamp: time.Now(),
 		Service:   a.config.ServiceName,

@@ -12,9 +12,9 @@ import (
 // @Produce	html
 // @Success	200	{string}	string	"HTML content"
 // @Router		/swagger [get]
-func (a *API) SysDocs(w http.ResponseWriter, r *http.Request) {
+func (a *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
 	htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
-		SpecURL:            "./docs/swagger.json",
+		SpecURL:            a.config.DocsSpecURL,
 		HideDownloadButton: true,
 		DarkMode:           true,
 		Theme:              scalar.ThemeSolarized,

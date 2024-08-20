@@ -15,27 +15,27 @@ import (
 // @Produce		json
 // @Param			provider	path	string	true	"Provider Name"
 // @Router			/auth/signout/{provider} [get]
-func (a *API) Signout(w http.ResponseWriter, r *http.Request) {
+func (a *Server) Signout(w http.ResponseWriter, r *http.Request) {
 	// INFO: Clear Cookies
 	a.SetCookies(w,
 		&http.Cookie{
-			Name: mw.SessionCookieName, Value: "",
-			Path: "/", Expires: time.Now(),
+			Name: mw.CookieGothicSession, Value: "",
+			Path: "/", Expires: time.Now().Add(-24*time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
-			Name: "sessionId", Value: "",
-			Path: "/", Expires: time.Now(),
+			Name: mw.CookieSessionID, Value: "",
+			Path: "/", Expires: time.Now().Add(-24*time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
-			Name: "accessToken", Value: "",
-			Path: "/", Expires: time.Now(),
+			Name: mw.CookieAccessToken, Value: "",
+			Path: "/", Expires: time.Now().Add(-24*time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
-			Name: "refreshToken", Value: "",
-			Path: "/", Expires: time.Now(),
+			Name: mw.CookieRefreshToken, Value: "",
+			Path: "/", Expires: time.Now().Add(-24*time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 	)

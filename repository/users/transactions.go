@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (r *UserRepo) ExecTx(ctx context.Context, fn func() error) error {
+func (r *userRepo) ExecTx(ctx context.Context, fn func() error) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err

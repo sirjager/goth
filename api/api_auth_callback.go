@@ -13,7 +13,7 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
+func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	redirectURL := gothic.GetState(r) // set by AuthProvider, original url of calling client
 
 	provider := chi.URLParam(r, "provider")
@@ -49,7 +49,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// if its user already exits error, get user and return it
-		result = a.repo.UserReadByEmail(r.Context(), vo.MustParseEmail(gothUser.Email))
+		result = a.repo.UserGetByEmail(r.Context(), vo.MustParseEmail(gothUser.Email))
 	}
 
 	if result.Error != nil {
@@ -68,7 +68,7 @@ func (a *API) AuthCallback(w http.ResponseWriter, r *http.Request) {
 
 // StoreUserSession stores the user in the cookies
 func storeUserSession(w http.ResponseWriter, r *http.Request, user goth.User) error {
-	session, _ := gothic.Store.Get(r, mw.SessionCookieName)
+	session, _ := gothic.Store.Get(r, mw.CookieGothicSession)
 	session.Values["email"] = user.Email
 	if err := session.Save(r, w); err != nil {
 		return err
@@ -76,8 +76,8 @@ func storeUserSession(w http.ResponseWriter, r *http.Request, user goth.User) er
 	return nil
 }
 
-func masterUserExists(c context.Context, repo *repository.Repo) (bool, error) {
-	master := repo.UserReadMaster(c)
+func masterUserExists(c context.Context, repo repository.Repository) (bool, error) {
+	master := repo.UserGetMaster(c)
 	if master.Error != nil {
 		if master.StatusCode != http.StatusNotFound {
 			return false, master.Error
