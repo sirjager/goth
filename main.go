@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sirjager/gopkg/cache"
 	"github.com/sirjager/gopkg/db"
+	"github.com/sirjager/gopkg/mail"
 	"github.com/sirjager/gopkg/tokens"
 	"golang.org/x/sync/errgroup"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/sirjager/goth/logger"
 	"github.com/sirjager/goth/oauth"
 	"github.com/sirjager/goth/repository"
+	"github.com/sirjager/goth/worker"
 )
 
 var startTime time.Time
@@ -29,10 +31,6 @@ var interuptSignals = []os.Signal{
 	os.Interrupt,
 	syscall.SIGTERM,
 	syscall.SIGINT,
-}
-
-func init() {
-	startTime = time.Now()
 }
 
 //	@title			OAuthAPI
@@ -46,12 +44,8 @@ func init() {
 // @BasePath	/
 func main() {
 	// NOTE: change name of .env file here. For defaults, use "defaults"
-	config, err := config.LoadConfigs(".", "defaults", startTime)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to load configurations")
-	}
-
-	logger, err := logger.NewLogger(config.Logger)
+	config := config.LoadConfigs(".", "defaults")
+	logger, err := logger.NewLogger(config.ServerName, config.LoggerLogfile, config.GoEnv)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize logger")
 	}
@@ -63,13 +57,13 @@ func main() {
 	wg, ctx := errgroup.WithContext(ctx)
 
 	// NOTE: http server address
-	address := fmt.Sprintf("%s:%d", config.Host, config.RESTPort)
+	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
 	redirect := fmt.Sprintf("http://%s", address)
 
 	// initializing sessions manager using redis backed
-	oauth := oauth.NewOAuth(redirect, config.OAuth, logr)
-	if err = oauth.InitializeRedisStore(config.RedisURLShort, config.SecretKey); err != nil {
+	oauth := oauth.NewOAuth(redirect, config, logr)
+	if err = oauth.InitializeRedisStore(config.RedisURLShort, config.AuthTokenSecret); err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize redis store")
 	}
 	defer oauth.Close(ctx, wg)
@@ -86,12 +80,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize repository")
 	}
 
-	// INFO: setting up redis for cache and async task workers
-	rOpts, parseErr := redis.ParseURL(config.RedisURL)
-	if parseErr != nil {
-		logger.Logr.Fatal().Err(parseErr).Msg("failed to parse redis url")
-	}
-	redisClient := redis.NewClient(rOpts)
+	redisClient := redis.NewClient(config.RedisOptions)
 	if pingErr := redisClient.Ping(ctx).Err(); pingErr != nil {
 		logger.Logr.Fatal().Err(pingErr).Msg("failed to ping redis client")
 	}
@@ -99,12 +88,27 @@ func main() {
 
 	cache := cache.NewCacheRedis(redisClient, logger.Logr)
 
-	tokenBuilder, builderErr := tokens.NewPasetoBuilder(config.SecretKey)
+	mailConfig := mail.Config{
+		SMTPSender: config.MailSMTPName,
+		SMTPUser:   config.MailSMTPUser,
+		SMTPPass:   config.MailSMTPPass,
+	}
+	mail, err := mail.NewGmailSender(mailConfig)
 	if err != nil {
-		logger.Logr.Fatal().Err(builderErr).Msg("failed to create token builder")
+		logr.Fatal().Err(err).Msg("failed to initialize gmail smtp")
 	}
 
-	server := api.NewServer(repo, logr, config, cache, tokenBuilder)
+	tokens, err := tokens.NewPasetoBuilder(config.AuthTokenSecret)
+	if err != nil {
+		logr.Fatal().Err(err).Msg("failed to create token builder")
+	}
+
+	tasks := worker.NewTaskDistributor(logr, config.RedisOptions)
+	defer tasks.Shutdown()
+
+	worker.RunTaskProcessor(ctx, wg, logr, repo, mail, cache, tokens, config, config.RedisOptions)
+
+	server := api.NewServer(repo, logr, config, cache, tokens, tasks)
 
 	server.StartServer(address, ctx, wg)
 

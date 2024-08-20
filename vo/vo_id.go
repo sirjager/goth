@@ -5,40 +5,43 @@ import (
 )
 
 type ID struct {
-	value uuid.UUID
+	baseValueObject[uuid.UUID]
 }
 
-// NewIDFrom returns a new ID from a string or an error
-func NewIDFrom(value string) (*ID, error) {
-	id := &ID{value: uuid.MustParse(value)}
-	if err := id.Validate(); err != nil {
+func NewID() (*ID, error) {
+	_uuid, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+	id := &ID{baseValueObject[uuid.UUID]{_uuid}}
+	if err = id.Validate(); err != nil {
 		return nil, err
 	}
 	return id, nil
 }
 
-func NewID() (*ID, error) {
-	id, err := uuid.NewRandom()
+func NewIDFrom(value string) (*ID, error) {
+	_uuid, err := uuid.Parse(value)
 	if err != nil {
 		return nil, err
 	}
-	return &ID{id}, nil
-}
-
-func (v *ID) Value() uuid.UUID {
-	return v.value
-}
-
-func (v *ID) IsEqual(other *ID) bool {
-	return v.value.String() == other.value.String()
+	id := &ID{baseValueObject[uuid.UUID]{_uuid}}
+	if err = id.Validate(); err != nil {
+		return nil, err
+	}
+	return id, nil
 }
 
 // MustParseID returns ID if valid else panics
 func MustParseID(value string) *ID {
-	id := &ID{value: uuid.MustParse(value)}
+	id := &ID{baseValueObject[uuid.UUID]{uuid.MustParse(value)}}
+	if err := id.Validate(); err != nil {
+		panic(err)
+	}
 	return id
 }
 
 func (v *ID) Validate() error {
+	// currently not needed
 	return nil
 }

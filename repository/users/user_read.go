@@ -12,23 +12,50 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
+type UserReadResult struct {
+	Error      error
+	User       *entity.User
+	StatusCode int
+}
+
 type UsersReadResult struct {
 	Error      error
 	Users      []*entity.User
 	StatusCode int
 }
 
-func (r *UserRepo) UsersRead(
-	ctx context.Context,
-	optionalLimit, optionalPage int,
-) (res UsersReadResult) {
+func (r *userRepo) UserGetByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
+	return r._userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserRead(ctx, userID.Value())
+	})
+}
+
+func (r *userRepo) UserGetByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
+	return r._userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadByEmail(ctx, email.Value())
+	})
+}
+
+func (r *userRepo) UserGetByUsername(ctx context.Context, u *vo.Username) (res UserReadResult) {
+	return r._userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadByUsername(ctx, u.Value())
+	})
+}
+
+func (r *userRepo) UserGetMaster(ctx context.Context) (res UserReadResult) {
+	return r._userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserReadMaster(ctx)
+	})
+}
+
+func (r *userRepo) UserGetAll(ctx context.Context, limit, page int) (res UsersReadResult) {
 	arg := sqlc.UsersReadParams{}
-	if optionalLimit > 0 {
-		arg.Limit = pgtype.Int4{Int32: int32(optionalLimit), Valid: true}
+	if limit > 0 {
+		arg.Limit = pgtype.Int4{Int32: int32(limit), Valid: true}
 	}
-	if optionalPage > 0 && optionalLimit > 0 {
+	if page > 0 && limit > 0 {
 		arg.Offset = pgtype.Int4{
-			Int32: int32((optionalPage - 1) * int(arg.Limit.Int32)),
+			Int32: int32((page - 1) * int(arg.Limit.Int32)),
 			Valid: true,
 		}
 	}
@@ -50,37 +77,7 @@ func (r *UserRepo) UsersRead(
 	return
 }
 
-type UserReadResult struct {
-	Error      error
-	User       *entity.User
-	StatusCode int
-}
-
-func (r *UserRepo) UserReadByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
-	return r.userReadCommon(func() (sqlc.User, error) {
-		return r.store.UserRead(ctx, userID.Value())
-	})
-}
-
-func (r *UserRepo) UserReadByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
-	return r.userReadCommon(func() (sqlc.User, error) {
-		return r.store.UserReadByEmail(ctx, email.Value())
-	})
-}
-
-func (r *UserRepo) UserReadByUsername(ctx context.Context, u *vo.Username) (res UserReadResult) {
-	return r.userReadCommon(func() (sqlc.User, error) {
-		return r.store.UserReadByUsername(ctx, u.Value())
-	})
-}
-
-func (r *UserRepo) UserReadMaster(ctx context.Context) (res UserReadResult) {
-	return r.userReadCommon(func() (sqlc.User, error) {
-		return r.store.UserReadMaster(ctx)
-	})
-}
-
-func (r *UserRepo) userReadCommon(call func() (sqlc.User, error)) (res UserReadResult) {
+func (r *userRepo) _userReadCommon(call func() (sqlc.User, error)) (res UserReadResult) {
 	dbuser, err := call()
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError

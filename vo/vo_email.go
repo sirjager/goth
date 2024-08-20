@@ -5,7 +5,7 @@ import (
 )
 
 type Email struct {
-	value string
+	baseValueObject[string]
 }
 
 var isValidEmail = regexp.MustCompile(
@@ -13,28 +13,11 @@ var isValidEmail = regexp.MustCompile(
 ).MatchString
 
 func NewEmail(value string) (*Email, error) {
-	email := &Email{value}
+	email := &Email{baseValueObject[string]{value}}
 	if err := email.Validate(); err != nil {
 		return nil, err
 	}
 	return email, nil
-}
-
-func (v *Email) IsEqual(other *Email) bool {
-	return v.value == other.value
-}
-
-// MustParseEmail returns email if valid or panics
-func MustParseEmail(value string) *Email {
-	email := &Email{value}
-	if err := email.Validate(); err != nil {
-		panic(err)
-	}
-	return email
-}
-
-func (e *Email) Value() string {
-	return string(e.value)
 }
 
 func (v *Email) Validate() error {
@@ -42,4 +25,13 @@ func (v *Email) Validate() error {
 		return ErrInvalidEmail
 	}
 	return nil
+}
+
+// MustParseEmail returns email if valid or panics
+func MustParseEmail(value string) *Email {
+	email := &Email{baseValueObject[string]{value}}
+	if err := email.Validate(); err != nil {
+		panic(err)
+	}
+	return email
 }

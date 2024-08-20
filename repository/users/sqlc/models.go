@@ -19,13 +19,11 @@ type User struct {
 	Blocked    bool      `json:"blocked"`
 	Provider   string    `json:"provider"`
 	GoogleID   string    `json:"google_id"`
-	Name       string    `json:"name"`
+	FullName   string    `json:"full_name"`
 	FirstName  string    `json:"first_name"`
 	LastName   string    `json:"last_name"`
-	NickName   string    `json:"nick_name"`
 	AvatarUrl  string    `json:"avatar_url"`
 	PictureUrl string    `json:"picture_url"`
-	Location   string    `json:"location"`
 	Master     bool      `json:"master"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`

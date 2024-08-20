@@ -14,39 +14,44 @@ import (
 
 	"github.com/sirjager/goth/config"
 	"github.com/sirjager/goth/repository"
+	"github.com/sirjager/goth/worker"
 )
 
-type API struct {
+type Server struct {
 	logr     zerolog.Logger
 	cache    cache.Cache
 	tokens   tokens.TokenBuilder
 	router   *chi.Mux
-	repo     *repository.Repo
+	repo     repository.Repository
 	validate *validator.Validate
-	config   config.Config
+	config   *config.Config
+	tasks    worker.TaskDistributor
 }
 
 func NewServer(
-	repo *repository.Repo,
+	repo repository.Repository,
 	logr zerolog.Logger,
-	config config.Config,
+	config *config.Config,
 	cache cache.Cache,
 	tokens tokens.TokenBuilder,
-) *API {
+	tasks worker.TaskDistributor,
+) *Server {
 	validator := validator.New(validator.WithRequiredStructEnabled())
-	server := &API{
+
+	server := &Server{
 		logr:     logr,
 		config:   config,
 		repo:     repo,
 		validate: validator,
 		tokens:   tokens,
 		cache:    cache,
+		tasks:    tasks,
 	}
-	server.setupRouter()
+	server.MountHandlers()
 	return server
 }
 
-func (server *API) StartServer(address string, ctx context.Context, wg *errgroup.Group) {
+func (server *Server) StartServer(address string, ctx context.Context, wg *errgroup.Group) {
 	httpServer := &http.Server{Handler: server.router, Addr: address}
 	wg.Go(func() error {
 		server.logr.Info().Msgf("started http server at %s", address)

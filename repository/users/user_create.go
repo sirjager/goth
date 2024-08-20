@@ -12,29 +12,22 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-type UserCreateParams struct {
-	User        *entity.User
-	AfterCreate func(created *entity.User) error
-}
-
-func (r *UserRepo) UserCreate(c context.Context, u *entity.User) (res UserReadResult) {
+func (r *userRepo) UserCreate(c context.Context, user *entity.User) (res UserReadResult) {
 	dbuser, err := r.store.UserCreate(c, sqlc.UserCreateParams{
 		ID:         uuid.New(),
-		Email:      u.Email.Value(),
-		Password:   u.Password.Value(),
-		Username:   u.Username.Value(),
-		Verified:   u.Verified,
-		Blocked:    u.Blocked,
-		Provider:   u.Provider,
-		GoogleID:   u.GoogleID,
-		Name:       u.Name,
-		FirstName:  u.FirstName,
-		LastName:   u.LastName,
-		NickName:   u.NickName,
-		AvatarUrl:  u.AvatarURL,
-		PictureUrl: u.PictureURL,
-		Master:     u.Master,
-		Location:   u.Location,
+		Email:      user.Email.Value(),
+		Password:   user.Password.Value(),
+		Username:   user.Username.Value(),
+		Verified:   user.Verified,
+		Blocked:    user.Blocked,
+		Provider:   user.Provider,
+		GoogleID:   user.GoogleID,
+		FullName:   user.FullName,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		AvatarUrl:  user.AvatarURL,
+		PictureUrl: user.PictureURL,
+		Master:     user.Master,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	})
@@ -49,7 +42,7 @@ func (r *UserRepo) UserCreate(c context.Context, u *entity.User) (res UserReadRe
 		return
 	}
 
-	res.StatusCode = 201
+	res.StatusCode = http.StatusCreated
 	res.User = r.ToUserEntity(dbuser)
 	return
 }

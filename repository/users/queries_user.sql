@@ -12,27 +12,29 @@ select * from "users" where username = $1 limit 1;
 
 -- name: UserCreate :one
 INSERT INTO "users" (
-  id, email,username,password, verified, blocked,
+  id,email,username,password,verified,blocked,
   provider,google_id,
-  name,first_name,last_name,nick_name,
-  avatar_url,picture_url,location,master,
+  full_name,first_name,last_name,
+  avatar_url,picture_url,master,
   created_at,updated_at
 ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *;
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *;
 
 -- name: UserDelete :one
 DELETE from "users" WHERE id = $1 RETURNING id;
 
 -- name: UserUpdate :one
 UPDATE "users" SET
-  name = $1,
+  full_name = $1,
   first_name = $2, 
   last_name = $3,
-  nick_name = $4,
-  picture_url = $5,
-  avatar_url = $6
+  picture_url = $4,
+  avatar_url = $5
 WHERE id = @id RETURNING *;
 
 
 -- name: UserReadMaster :one 
 SELECT * FROM "users" where master = true LIMIT 1;
+
+-- name: UserUpdateVerified :one
+UPDATE "users" SET verified = $1 WHERE id = @id RETURNING *;

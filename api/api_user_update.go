@@ -10,10 +10,13 @@ import (
 )
 
 type UpdateUserParams struct {
-	FirstName  string `json:"first_name,omitempty"  validate:"max=30"`
-	LastName   string `json:"last_name,omitempty"   validate:"max=30"`
-	Name       string `json:"name,omitempty"        validate:"max=100"`
-	PictureURL string `json:"picture_url,omitempty" validate:""`
+	Email      string `json:"email,omitempty"`
+	Username   string `json:"username,omitempty"`
+	Password   string `json:"password,omitempty"`
+	FirstName  string `json:"firstName,omitempty"`
+	LastName   string `json:"lastName,omitempty"`
+	FullName   string `json:"fullName,omitempty"`
+	PictureURL string `json:"pictureURL,omitempty"`
 } //	@name	UpdateUserParams
 
 // @Summary		Update User
@@ -24,12 +27,12 @@ type UpdateUserParams struct {
 // @Param			body		body	UpdateUserParams	true	"Update User Params"
 // @Router			/users/{identity} [patch]
 // @Success		200	{object}	UserResponse	"UserResponse"
-func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	identity := chi.URLParam(r, "identity")
 	var params UpdateUserParams
-	if err := a.ParseAndValidate(r, &params); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := s.ParseAndValidate(r, &params); err != nil {
+		s.Failure(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -38,9 +41,9 @@ func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	if mw.IsCurrentUserIdentity(r) {
 		target = user // if target is authorized user, self update
 	} else {
-		result := fetchUserFromRepository(r.Context(), identity, a.repo)
+		result := fetchUserFromRepository(r.Context(), identity, s.repo)
 		if result.Error != nil {
-			http.Error(w, result.Error.Error(), result.StatusCode)
+			s.Failure(w, result.Error, result.StatusCode)
 			return
 		}
 		target = result.User
@@ -48,23 +51,23 @@ func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	shouldApplyPatch = patchUser(target, params)
 	if shouldApplyPatch {
-		result := a.repo.UserUpdate(r.Context(), target)
+		result := s.repo.UserUpdate(r.Context(), target)
 		if result.Error != nil {
-			http.Error(w, result.Error.Error(), result.StatusCode)
+			s.Failure(w, result.Error, result.StatusCode)
 			return
 		}
 		target = result.User
 	}
 
 	response := UserResponse{target.Profile()}
-	a.Success(w, response)
+	s.Success(w, response)
 }
 
 func patchUser(user *entity.User, params UpdateUserParams) (shouldPatch bool) {
 	// only update when params are not empty and when different
-	if params.Name != "" && params.Name != user.Name {
+	if params.FullName != "" && params.FullName != user.FullName {
 		shouldPatch = true
-		user.Name = params.Name
+		user.FullName = params.FullName
 	}
 	if params.FirstName != "" && params.FirstName != user.FirstName {
 		shouldPatch = true

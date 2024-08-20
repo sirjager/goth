@@ -11,14 +11,14 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 )
 
-// @Summary		Login
-// @Description	Authenticates a user with a specified provider
-// @Tags			Auth
-// @Produce		json
-// @Router			/auth/{provider} [get]
-// @Param			provider	path		string			true	"Provider Name"
-// @Success		200			{object}	UserResponse	"User object"
-func (a *API) AuthProvider(w http.ResponseWriter, r *http.Request) {
+//	@Summary		OAuth
+//	@Description	Authenticates a user with a specified oauth provider
+//	@Tags			Auth
+//	@Produce		json
+//	@Router			/auth/{provider} [get]
+//	@Param			provider	path		string			true	"OAuth provider name"	Enums(google, github)
+//	@Success		200			{object}	UserResponse	"User object"
+func (a *Server) OAuthProvider(w http.ResponseWriter, r *http.Request) {
 	refererURL := r.Header.Get("Referer")
 	parsedURL, err := url.Parse(refererURL)
 	if err != nil {

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/markbates/goth"
 
 	"github.com/sirjager/goth/entity"
@@ -15,28 +18,28 @@ func EntitiesToProfiles(users []*entity.User) []*entity.Profile {
 	return result
 }
 
-func GothUserToEntityUser(user goth.User) *entity.User {
-	userEntity := &entity.User{
+func GothUserToEntityUser(gothUser goth.User) *entity.User {
+	user := &entity.User{
 		// ID:         vo.MustParseID(user.UserID), -- this is google id, it is slightly different, so we have to skip this
-		Email:      vo.MustParseEmail(user.Email),
-		Username:   vo.GenerateUsername(),
+		Email:      vo.MustParseEmail(gothUser.Email),
+		Username:   vo.MustParseUsername(strings.Split(gothUser.Email, "@")[0]),
 		Password:   &vo.HashedPassword{}, // this user does not have password
-		Provider:   user.Provider,
-		Name:       user.Name,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Location:   user.Location,
-		NickName:   user.NickName,
-		GoogleID:   user.UserID,
+		Provider:   gothUser.Provider,
+		FullName:   fmt.Sprintf("%s %s", gothUser.FirstName, gothUser.LastName),
+		FirstName:  gothUser.FirstName,
+		LastName:   gothUser.LastName,
+		GoogleID:   gothUser.UserID,
 		Verified:   false,
-		PictureURL: user.AvatarURL, //  this will be set by user,
-		AvatarURL:  user.AvatarURL, // this comes from auth provider
+		PictureURL: gothUser.AvatarURL, //  this will be set by user,
+		AvatarURL:  gothUser.AvatarURL, // this comes from auth provider
 	}
 
-	if user.RawData["verified_email"] != nil {
-		userEntity.Verified = user.RawData["verified_email"].(bool)
+	if gothUser.RawData["verified_email"] != nil {
+		if _emailVerified, ok := gothUser.RawData["verified_email"].(bool); ok {
+			user.Verified = _emailVerified
+		}
 	}
-	return userEntity
+	return user
 }
 
 func GothUserToUser(gothuser goth.User) *entity.Profile {

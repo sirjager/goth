@@ -11,6 +11,12 @@ type welcomeResponse struct {
 	Docs    string `json:"docs,omitempty"`
 } // @name WelcomeResponse
 
+func welcomeMessaage(serviceName string) string {
+	return fmt.Sprintf("Welcome to %s", serviceName)
+}
+
+const docsPath = "/swagger"
+
 // Welcome Docs
 //
 //	@Summary		Welcome
@@ -20,10 +26,10 @@ type welcomeResponse struct {
 //	@Produce		json
 //	@Router			/ [get]
 //	@Success		200	{object}	welcomeResponse
-func (a *API) SysWelcome(w http.ResponseWriter, r *http.Request) {
+func (a *Server) Welcome(w http.ResponseWriter, r *http.Request) {
 	response := welcomeResponse{
-		Message: fmt.Sprintf("Welcome to %s", a.config.ServiceName),
-		Docs:    "/swagger",
+		Message: welcomeMessaage(a.config.ServiceName),
+		Docs:    docsPath,
 	}
 
 	w.Header().Add("Content-Type", "application/json")

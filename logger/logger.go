@@ -31,17 +31,12 @@ const (
 	BoldWhite  = "\033[1;37m"
 )
 
-type Config struct {
-	ServerName string `mapstructure:"SERVER_NAME"`
-	Logfile    string `mapstructure:"LOGFILE"`
-}
-
 type Logger struct {
 	file *os.File
 	Logr zerolog.Logger
 }
 
-func NewLogger(cfg Config) (*Logger, error) {
+func NewLogger(serverName, logFile, goEnv string) (*Logger, error) {
 	var logr zerolog.Logger
 	var file *os.File
 	var err error
@@ -50,8 +45,8 @@ func NewLogger(cfg Config) (*Logger, error) {
 		return filepath.Base(file) + ":" + strconv.Itoa(line)
 	}
 
-	if cfg.Logfile != "" {
-		file, err = os.OpenFile(cfg.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if logFile != "" {
+		file, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +55,7 @@ func NewLogger(cfg Config) (*Logger, error) {
 		logr = zerolog.New(newConsoleWriter())
 	}
 
-	logr = logr.With().Str("server", cfg.ServerName).Logger()
+	logr = logr.With().Str("server", serverName).Logger()
 	logr = logr.With().Timestamp().Caller().Logger()
 
 	return &Logger{Logr: logr, file: file}, nil
