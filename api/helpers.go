@@ -102,7 +102,7 @@ func (a *Server) ParseAndValidate(r *http.Request, v interface{}, validation ...
 func fetchUserFromRepository(
 	c context.Context,
 	identity string,
-	repo repository.Repository,
+	repo repository.Repo,
 ) users.UserReadResult {
 	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
 		return repo.UserGetByEmail(c, email)

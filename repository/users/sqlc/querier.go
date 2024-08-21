@@ -18,6 +18,7 @@ type Querier interface {
 	UserReadByUsername(ctx context.Context, username string) (User, error)
 	UserReadMaster(ctx context.Context) (User, error)
 	UserUpdate(ctx context.Context, arg UserUpdateParams) (User, error)
+	UserUpdatePassword(ctx context.Context, arg UserUpdatePasswordParams) (User, error)
 	UserUpdateVerified(ctx context.Context, arg UserUpdateVerifiedParams) (User, error)
 	UsersRead(ctx context.Context, arg UsersReadParams) ([]User, error)
 }

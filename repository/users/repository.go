@@ -23,6 +23,7 @@ type UserRepository interface {
 	UserGetByUsername(c context.Context, username *vo.Username) UserReadResult
 	UserUpdate(c context.Context, user *entity.User) UserReadResult
 	UserUpdateVerified(c context.Context, userID *vo.ID, status bool) UserReadResult
+	UserUpdatePassword(c context.Context, userID *vo.ID, pass *vo.HashedPassword) UserReadResult
 }
 
 type userRepo struct {

@@ -7,7 +7,7 @@ import (
 	"github.com/sirjager/goth/repository/users"
 )
 
-type Repository interface {
+type Repo interface {
 	users.UserRepository
 }
 
@@ -15,7 +15,7 @@ type repo struct {
 	users.UserRepository
 }
 
-func NewRepository(conn *pgxpool.Pool, pgURL string, logger zerolog.Logger) (Repository, error) {
+func NewRepository(conn *pgxpool.Pool, pgURL string, logger zerolog.Logger) (Repo, error) {
 	users, err := users.NewUsersRepo(conn, pgURL, logger)
 	if err != nil {
 		return nil, err

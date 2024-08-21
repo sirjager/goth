@@ -29,3 +29,12 @@ func (r *userRepo) UserUpdateVerified(ctx context.Context, uid *vo.ID, status bo
 		})
 	})
 }
+
+func (r *userRepo) UserUpdatePassword(ctx context.Context, uid *vo.ID, pass *vo.HashedPassword) UserReadResult {
+	return r._userReadCommon(func() (sqlc.User, error) {
+		return r.store.UserUpdatePassword(ctx, sqlc.UserUpdatePasswordParams{
+			ID:       uid.Value(),
+			Password: pass.Value(),
+		})
+	})
+}

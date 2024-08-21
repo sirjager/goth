@@ -19,7 +19,7 @@ func RunTaskProcessor(
 	ctx context.Context,
 	wg *errgroup.Group,
 	logr zerolog.Logger,
-	repo repository.Repository,
+	repo repository.Repo,
 	mail mail.Sender,
 	cache cache.Cache,
 	tokens tokens.TokenBuilder,

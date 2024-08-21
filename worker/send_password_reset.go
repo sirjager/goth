@@ -13,35 +13,33 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-const TaskSendEmailVerification = "task:sendEmailVerification"
+const TaskSendResetPassword = "task:send:resetpassword"
 
-func (d *dist) SendEmailVerification(
+func (d *dist) ResetPassword(
 	ctx context.Context,
-	payload *payload.VerifyEmail,
+	payload *payload.ResetPassword,
 	opts ...asynq.Option,
 ) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed marshaling payload: %w", err)
 	}
-	task := asynq.NewTask(TaskSendEmailVerification, bytes, opts...)
+	task := asynq.NewTask(TaskSendResetPassword, bytes, opts...)
 	if _, err := d.client.EnqueueContext(ctx, task); err != nil {
 		return fmt.Errorf("failed to enque task: %w", err)
 	}
-
-	d.logr.Info().Str("task", TaskSendEmailVerification).Msg("task enqueued")
+	d.logr.Info().Str("task", TaskSendResetPassword).Msg("task enqueued")
 	return nil
 }
 
-func (p *proc) SendEmailVerification(ctx context.Context, task *asynq.Task) (err error) {
-	var _payload payload.VerifyEmail
-	// if can't even unmarshal we will skip retring
-	if err = json.Unmarshal(task.Payload(), &_payload); err != nil {
+func (p *proc) ResetPassword(ctx context.Context, task *asynq.Task) error {
+	var _payload payload.ResetPassword
+	if err := json.Unmarshal(task.Payload(), &_payload); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", asynq.SkipRetry)
 	}
 
 	if time.Since(_payload.CreatedAt) > p.config.AuthEmailVerifyExpire {
-		return fmt.Errorf("email verify payload expired: %w", asynq.SkipRetry)
+		return fmt.Errorf("email payload expired: %w", asynq.SkipRetry)
 	}
 
 	userEmail, err := vo.NewEmail(_payload.Email)
@@ -49,29 +47,25 @@ func (p *proc) SendEmailVerification(ctx context.Context, task *asynq.Task) (err
 		return fmt.Errorf("invalid user email: %w", asynq.SkipRetry)
 	}
 
-	uniqueCacheKey := fmt.Sprintf("verify:%s", userEmail.Value())
-	codeExpireDuration := p.config.AuthEmailVerifyExpire
-
+	uniqueCacheKey := fmt.Sprintf("reset:%s", userEmail.Value())
+	codeIsValidTill := _payload.CreatedAt.Add(p.config.AuthRefreshTokenExpire)
 	email := mail.Mail{To: []string{userEmail.Value()}}
-	email.Subject = "Complete Sign Up With Email Verification"
+	email.Subject = "Password Reset Code"
 	email.Body = fmt.Sprintf(`
-	Welcome to our community. <br><br>
-	Complete your signup by verification <br>
-	Your email verification code : <b>%s</b> <br>
-	Verification code is only valid for : <b>%s</b> <br><br>`,
-		_payload.Code,
-		codeExpireDuration,
-	)
+	Password reset code: <b>%s</b><br>
+	Code is valid till: <b>%s</b>`,
+		_payload.Code, codeIsValidTill)
 
 	if err = p.mail.SendMail(email); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	// redis will automatically delete expired verification codes
-	if err = p.cache.Set(ctx, uniqueCacheKey, _payload, codeExpireDuration); err != nil {
+	if err = p.cache.Set(ctx, uniqueCacheKey, _payload, p.config.AuthPasswordResetExpire); err != nil {
 		return fmt.Errorf("failed to cache payload: %w", err)
 	}
 
 	p.logr.Info().Str("task", TaskSendEmailVerification).Msg("task processed successfully")
-	return
+
+	return nil
 }

@@ -20,30 +20,29 @@ import (
 type Server struct {
 	logr     zerolog.Logger
 	cache    cache.Cache
-	tokens   tokens.TokenBuilder
+	toknb    tokens.TokenBuilder // tokens was too common and was conflicting in code, so using toknb for now.
 	router   *chi.Mux
-	repo     repository.Repository
+	repo     repository.Repo
 	validate *validator.Validate
 	config   *config.Config
 	tasks    worker.TaskDistributor
 }
 
 func NewServer(
-	repo repository.Repository,
+	repo repository.Repo,
 	logr zerolog.Logger,
 	config *config.Config,
 	cache cache.Cache,
-	tokens tokens.TokenBuilder,
+	toknb tokens.TokenBuilder,
 	tasks worker.TaskDistributor,
 ) *Server {
-	validator := validator.New(validator.WithRequiredStructEnabled())
-
+	validate := validator.New(validator.WithRequiredStructEnabled())
 	server := &Server{
 		logr:     logr,
 		config:   config,
 		repo:     repo,
-		validate: validator,
-		tokens:   tokens,
+		validate: validate,
+		toknb:    toknb,
 		cache:    cache,
 		tasks:    tasks,
 	}

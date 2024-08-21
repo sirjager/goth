@@ -10,7 +10,7 @@ import (
 	"github.com/sirjager/gopkg/cache"
 	"github.com/sirjager/gopkg/utils"
 
-	mw "github.com/sirjager/goth/middlewares"
+	"github.com/sirjager/goth/payload"
 	"github.com/sirjager/goth/vo"
 	"github.com/sirjager/goth/worker"
 )
@@ -27,9 +27,9 @@ type EmailVerificationResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Router			/auth/verify [post]
-//	@Param			email	query		string						true	"Email to verify"
-//	@Param			code	query		string						false	"Email verification code if already have any"
-//	@Success		200		{object}	EmailVerificationResponse	"EmailVerificationResponse"
+//	@Param			email	query		string	true	"Email to verify"
+//	@Param			code	query		string	false	"Email verification code if already have any"
+//	@Success		200		{string}	string	"Success message"
 func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	queryParamVerifyEmail := r.URL.Query().Get("email")
 	queryParamVerifyCode := r.URL.Query().Get("code")
@@ -44,6 +44,11 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	res := s.repo.UserGetByEmail(r.Context(), email)
 	user := res.User
+
+	if res.Error == nil && user.Verified {
+		s.SuccessOK(w, "email already verified")
+		return
+	}
 
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
@@ -65,7 +70,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	verificationCodeKey := fmt.Sprintf("verify:%s", user.Email.Value())
 
 	isAlreadyPending := true
-	var pending mw.TokenCustomPayload
+	var pending payload.VerifyEmail
 	if err = s.cache.Get(r.Context(), verificationCodeKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			s.Failure(w, err)
@@ -93,12 +98,12 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		// we dont have to verify payload or anything else
 		// in cache after expration, cache automatically deletes it
 		// so it exists means code is still valid, just have to match it
-		if !email.IsEqual(pending.UserEmail) {
+		if !email.IsEqual(pending.Email) {
 			s.logr.Error().Msg("pending verification, mismatch email")
 			s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
 			return
 		}
-		if queryParamVerifyCode != pending.EmailVerificationCode {
+		if queryParamVerifyCode != pending.Code {
 			s.logr.Error().Msg("pending verification, mismatch verification code")
 			s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
 			return
@@ -126,13 +131,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	// here we only send email verification code
 
-	tokenParams := mw.NewEmailVerificationPayload(user)
-	token, _, err := s.tokens.CreateToken(tokenParams, s.config.AuthEmailVerifyExpire)
-	if err != nil {
-		s.Failure(w, err)
-		return
-	}
-	payload := worker.SendEmailVerificationPayload{Token: token}
+	payload := payload.NewVerifyEmailPayload(user)
 	err = s.tasks.SendEmailVerification(r.Context(), payload,
 		asynq.MaxRetry(2), asynq.Group(worker.PriorityLow),
 		asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(100, 600))),
@@ -141,6 +140,6 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		s.Failure(w, err)
 		return
 	}
-	message := EmailVerificationResponse{Message: "check your inbox for further instructions"}
-	s.Success(w, message)
+
+	s.SuccessOK(w, "check your inbox for further instructions")
 }

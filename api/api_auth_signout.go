@@ -20,22 +20,22 @@ func (a *Server) Signout(w http.ResponseWriter, r *http.Request) {
 	a.SetCookies(w,
 		&http.Cookie{
 			Name: mw.CookieGothicSession, Value: "",
-			Path: "/", Expires: time.Now().Add(-24*time.Hour),
+			Path: "/", Expires: time.Now().Add(-24 * time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
 			Name: mw.CookieSessionID, Value: "",
-			Path: "/", Expires: time.Now().Add(-24*time.Hour),
+			Path: "/", Expires: time.Now().Add(-24 * time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
 			Name: mw.CookieAccessToken, Value: "",
-			Path: "/", Expires: time.Now().Add(-24*time.Hour),
+			Path: "/", Expires: time.Now().Add(-24 * time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
 			Name: mw.CookieRefreshToken, Value: "",
-			Path: "/", Expires: time.Now().Add(-24*time.Hour),
+			Path: "/", Expires: time.Now().Add(-24 * time.Hour),
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 	)

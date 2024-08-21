@@ -27,9 +27,9 @@ const (
 	PriorityLazy     = "lazy"
 )
 
-type processor struct {
+type proc struct {
 	logr   zerolog.Logger
-	repo   repository.Repository
+	repo   repository.Repo
 	mail   mail.Sender
 	cache  cache.Cache
 	tokens tokens.TokenBuilder
@@ -39,7 +39,7 @@ type processor struct {
 
 func newTaskProcessor(
 	logr zerolog.Logger,
-	repo repository.Repository,
+	repo repository.Repo,
 	mail mail.Sender,
 	cache cache.Cache,
 	tokens tokens.TokenBuilder,
@@ -67,7 +67,7 @@ func newTaskProcessor(
 
 	server := asynq.NewServer(opts, clientConfig)
 
-	return &processor{
+	return &proc{
 		server: server,
 		logr:   logr,
 		repo:   repo,
@@ -79,7 +79,7 @@ func newTaskProcessor(
 }
 
 // Start starts the RedisTaskProcessor
-func (p *processor) Start() error {
+func (p *proc) Start() error {
 	mux := asynq.NewServeMux()
 
 	mux.HandleFunc(TaskSendEmailVerification, p.SendEmailVerification)
@@ -87,6 +87,6 @@ func (p *processor) Start() error {
 	return p.server.Start(mux)
 }
 
-func (p *processor) Shutdown() {
+func (p *proc) Shutdown() {
 	p.server.Shutdown()
 }

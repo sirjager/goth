@@ -41,6 +41,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh": {
+            "get": {
+                "description": "Reset Password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns User in body",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns AccessToken and SessionID in body",
+                        "name": "cookies",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "RefreshTokenResponse",
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/signin": {
             "get": {
                 "security": [
@@ -189,9 +226,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "EmailVerificationResponse",
+                        "description": "Success message",
                         "schema": {
-                            "$ref": "#/definitions/EmailVerificationResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -214,7 +251,7 @@ const docTemplate = `{
                             "github"
                         ],
                         "type": "string",
-                        "description": "OAuth provider name",
+                        "description": "OAuth provider name [google,github]",
                         "name": "provider",
                         "in": "path",
                         "required": true
@@ -373,14 +410,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "EmailVerificationResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
         "HealthResponse": {
             "type": "object",
             "properties": {
@@ -401,6 +430,23 @@ const docTemplate = `{
                 },
                 "uptime": {
                     "type": "string"
+                }
+            }
+        },
+        "RefreshTokenResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "sessionID": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
                 }
             }
         },

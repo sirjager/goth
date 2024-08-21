@@ -28,10 +28,10 @@ func (a *Server) MountHandlers() {
 		r.Post("/signup", a.Signup)
 		r.Get("/verify", a.VerifyEmail)
 
-		r.With(mw.RequiresAuth(a.repo, a.tokens, a.cache), mw.RequiresVerified()).
+		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
 			Get("/user", a.AuthUser)
 
-		r.With(mw.RequiresAuth(a.repo, a.tokens, a.cache, true), mw.RequiresVerified()).
+		r.With(mw.RequiresRefreshToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
 			Get("/refresh", a.RefreshToken)
 
 		r.Get("/signout/{provider}", a.Signout)
@@ -40,14 +40,14 @@ func (a *Server) MountHandlers() {
 	})
 
 	c.Route("/users", func(r chi.Router) {
-		r.Use(mw.RequiresAuth(a.repo, a.tokens, a.cache))
+		r.Use(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr))
 		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresMaster())
 		r.Get("/", a.UsersGet)
 	})
 
 	c.Route("/users/{identity}", func(r chi.Router) {
-		r.Use(mw.RequiresAuth(a.repo, a.tokens, a.cache))
+		r.Use(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr))
 		// r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresPermissions())
 
