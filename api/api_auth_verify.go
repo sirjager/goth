@@ -63,7 +63,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		}
 
 		s.logr.Error().Msg("user not found, has verification code")
-		s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
+		s.Failure(w, errInvalidCode, http.StatusBadRequest)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 		s.logr.Error().Msg("pending verification, no email verification code")
 		// since no email verification code is provided
-		s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
+		s.Failure(w, errInvalidCode, http.StatusBadRequest)
 		return
 	}
 
@@ -100,12 +100,12 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		// so it exists means code is still valid, just have to match it
 		if !email.IsEqual(pending.Email) {
 			s.logr.Error().Msg("pending verification, mismatch email")
-			s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
+			s.Failure(w, errInvalidCode, http.StatusBadRequest)
 			return
 		}
 		if queryParamVerifyCode != pending.Code {
 			s.logr.Error().Msg("pending verification, mismatch verification code")
-			s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
+			s.Failure(w, errInvalidCode, http.StatusBadRequest)
 			return
 		}
 
@@ -125,7 +125,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	if hasVerificationCode {
 		// since there is no pending verification code, to match and verify to
 		// so we directly return error, as code might have been expired.
-		s.Failure(w, errInvalidEmailVerificationCode, http.StatusBadRequest)
+		s.Failure(w, errInvalidCode, http.StatusBadRequest)
 		return
 	}
 

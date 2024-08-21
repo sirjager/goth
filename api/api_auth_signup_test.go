@@ -25,7 +25,7 @@ func TestSignup(t *testing.T) {
 	user, password, hashedPassword := randomUser(t)
 	testCases := []struct {
 		check func(t *testing.T, recorder *httptest.ResponseRecorder)
-		stubs func(repo *mockRepo.MockRepository)
+		stubs func(repo *mockRepo.MockRepo)
 		body  SignUpRequestParams
 		name  string
 	}{
@@ -36,7 +36,7 @@ func TestSignup(t *testing.T) {
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				newUser := &entity.User{
 					ID:       vo.MustParseID(user.User.ID),
 					Email:    vo.MustParseEmail(user.User.Email),
@@ -72,7 +72,7 @@ func TestSignup(t *testing.T) {
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
 				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -87,7 +87,7 @@ func TestSignup(t *testing.T) {
 				Username: user.User.Username,
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
 				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -102,7 +102,7 @@ func TestSignup(t *testing.T) {
 				Username: "cool-username.me",
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
 				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -117,7 +117,7 @@ func TestSignup(t *testing.T) {
 				Username: user.User.Username,
 				Password: "missing-1-symbol-and-uppercase",
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
 				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -132,7 +132,7 @@ func TestSignup(t *testing.T) {
 				Username: user.User.Username,
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				masterRes := users.UserReadResult{
 					Error:      repoerrors.ErrUserNotFound,
 					User:       nil,
@@ -157,7 +157,7 @@ func TestSignup(t *testing.T) {
 				Username: user.User.Username,
 				Password: password.Value(),
 			},
-			stubs: func(repo *mockRepo.MockRepository) {
+			stubs: func(repo *mockRepo.MockRepo) {
 				repo.EXPECT().UserGetMaster(gomock.Any()).Times(1).Return(users.UserReadResult{
 					User:       nil,
 					StatusCode: http.StatusInternalServerError,
@@ -177,7 +177,7 @@ func TestSignup(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			repo := mockRepo.NewMockRepository(ctrl)
+			repo := mockRepo.NewMockRepo(ctrl)
 			tc.stubs(repo)
 
 			// Marshal body data to JSON

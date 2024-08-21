@@ -44,7 +44,7 @@ func TestWelcome(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			repo := mockRepo.NewMockRepository(ctrl)
+			repo := mockRepo.NewMockRepo(ctrl)
 
 			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
 			recoder := httptest.NewRecorder()
