@@ -13,7 +13,7 @@ type UserDeleteResult struct {
 	StatusCode int
 }
 
-func (r *userRepo) UserDelete(ctx context.Context, userID *vo.ID) (res UserDeleteResult) {
+func (r *repo) UserDelete(ctx context.Context, userID *vo.ID) (res UserDeleteResult) {
 	_, err := r.store.UserDelete(ctx, userID.Value())
 	if err != nil {
 		res.Error = err

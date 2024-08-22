@@ -13,7 +13,6 @@ import (
 
 	"github.com/sirjager/goth/config"
 	"github.com/sirjager/goth/oauth"
-	"github.com/sirjager/goth/worker"
 )
 
 var (
@@ -21,7 +20,6 @@ var (
 	testCache  cache.Cache
 	testTokens tokens.TokenBuilder
 	testLogr   zerolog.Logger
-	testTasks  worker.TaskDistributor
 )
 
 func TestMain(M *testing.M) {
@@ -34,7 +32,6 @@ func TestMain(M *testing.M) {
 
 	redisClient := redis.NewClient(redisOptions)
 	cache := cache.NewCacheRedis(redisClient, logr)
-	tasks := worker.NewTaskDistributor(logr, redisOptions)
 
 	tokens, err := tokens.NewPasetoBuilder(config.AuthTokenSecret)
 	if err != nil {
@@ -52,6 +49,5 @@ func TestMain(M *testing.M) {
 	testConfig = config
 	testTokens = tokens
 	testCache = cache
-	testTasks = tasks
 	os.Exit(M.Run())
 }

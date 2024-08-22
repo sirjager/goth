@@ -27,6 +27,7 @@ func (a *Server) MountHandlers() {
 		r.Get("/signin", a.Signin)
 		r.Post("/signup", a.Signup)
 		r.Get("/verify", a.VerifyEmail)
+		r.Post("/reset", a.Reset)
 
 		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
 			Get("/user", a.AuthUser)
@@ -48,7 +49,7 @@ func (a *Server) MountHandlers() {
 
 	c.Route("/users/{identity}", func(r chi.Router) {
 		r.Use(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr))
-		// r.Use(mw.RequiresVerified())
+		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresPermissions())
 
 		r.Get("/", a.UserGet)

@@ -11,21 +11,16 @@ import (
 	"github.com/sirjager/gopkg/utils"
 
 	"github.com/sirjager/goth/payload"
+	"github.com/sirjager/goth/repository/users"
 	"github.com/sirjager/goth/vo"
 	"github.com/sirjager/goth/worker"
 )
 
-type MessageResponse struct {
-	Message string `json:"message,omitempty"`
-}
-
 const checkYourInbox = "check your inbox for further instructions"
 
-var errInvalidCode = errors.New("error invalid code")
-
 type ResetPasswordParams struct {
-	Code        string `json:"code,omitempty"`
 	Email       string `json:"email,omitempty"`
+	Code        string `json:"code,omitempty"`
 	NewPassword string `json:"newPassword,omitempty"`
 }
 
@@ -36,30 +31,22 @@ type ResetPasswordParams struct {
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/refresh [get]
-//	@Param			user	query		bool					false	"If true, returns User in body"
-//	@Param			cookies	query		bool					false	"If true, returns AccessToken and SessionID in body"
-//	@Success		200		{object}	RefreshTokenResponse	"RefreshTokenResponse"
+//	@Router			/auth/reset [post]
+//	@Param			body	body	ResetPasswordParams	true	"ResetPasswordParams"
 func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 	var param ResetPasswordParams
 	if err := s.ParseAndValidate(r, &param, ValidationDisable); err != nil {
 		s.Failure(w, err, http.StatusBadRequest)
 		return
 	}
-	// code can also be passed in query params  ?code=xxxxxx
-	if param.Code == "" {
-		param.Code = r.URL.Query().Get("code")
-	}
-	// email can also be passed in query params  ?email=xxxxxx
-	if param.Email == "" {
-		param.Code = r.URL.Query().Get("email")
-	}
 
 	hasCode := len(param.Code) != 0
+	emailAction := payload.PasswordReset
+	cooldownTime := s.config.AuthPasswordResetCooldown
+	codeExpiration := s.config.AuthPasswordResetExpire
 
 	email, err := vo.NewEmail(param.Email)
 	if err != nil {
-		s.logr.Error().Err(err).Msg("invalid email")
 		s.Failure(w, err, http.StatusBadRequest)
 		return
 	}
@@ -70,21 +57,23 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 			s.Failure(w, res.Error, res.StatusCode)
 			return
 		}
-		s.logr.Error().Err(res.Error).Msg("reset failed: no user")
-		response := MessageResponse{Message: checkYourInbox}
-		s.Success(w, response)
+		if hasCode {
+			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			return
+		}
+		s.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
 	if !res.User.Verified {
-		response := MessageResponse{Message: "can not proceed without verified email"}
-		s.Success(w, response, http.StatusForbidden)
+		s.Failure(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
 		return
 	}
 
+	// if request is already pending then return error with try again message
 	isAlreadyPending := true
-	var pending payload.ResetPassword
-	actionKey := fmt.Sprintf("reset:%s", res.User.Email.Value())
+	var pending payload.EmailPayload
+	actionKey := payload.EmailKey(res.User.Email.Value(), payload.PasswordReset)
 	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			s.Failure(w, err)
@@ -93,76 +82,100 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 		isAlreadyPending = false
 	}
 
-	if isAlreadyPending && !hasCode {
-		timeDifference := time.Since(pending.CreatedAt)
-		if timeDifference < s.config.AuthPasswordResetCooldown {
-			tryAfter := s.config.AuthPasswordResetCooldown - timeDifference
-			err = fmt.Errorf("recently requested, please try again after %s", tryAfter)
-			s.Failure(w, err, http.StatusForbidden)
-			return
-		}
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
-		return
-	}
-
-	if isAlreadyPending && hasCode {
-		// we dont have to verify payload or anything else
-		// in cache after expiration, cache automatically deletes it
-		// so it exists means code is still valid, just have to match it
-		if !email.IsEqual(pending.Email) {
-			s.logr.Error().Msg("pending verification, mismatch email")
+	if !isAlreadyPending {
+		if hasCode {
 			s.Failure(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
-		if param.Code != pending.Code {
-			s.logr.Error().Msg("pending verification, mismatch verification code")
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
-			return
+		mailCode := utils.RandomNumberAsString(6)
+		mailSub := "Password Reset Requested"
+		payload := payload.EmailPayload{
+			Email:     res.User.Email.Value(),
+			Body:      resetPasswordEmailBody(mailCode, codeExpiration),
+			Subject:   mailSub,
+			Type:      emailAction,
+			Code:      mailCode, // this will be used to validate code
+			CacheKey:  payload.EmailKey(res.User.Email.Value(), emailAction),
+			CacheExp:  codeExpiration,
+			CreatedAt: time.Now(),
 		}
-
-		password, err := vo.NewPassword(param.NewPassword)
-		if err != nil {
-			s.Failure(w, err, http.StatusBadRequest)
-			return
-		}
-
-		hashedPassword, err := password.HashPassword()
+		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
 		if err != nil {
 			s.Failure(w, err)
 			return
 		}
 
-		// now update it to users repository
-		res = s.repo.UserUpdatePassword(r.Context(), res.User.ID, hashedPassword)
-		if res.Error != nil {
-			s.Failure(w, res.Error, res.StatusCode)
+		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
+			asynq.MaxRetry(3), asynq.Group(worker.PriorityUrgent),
+			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
+		); err != nil {
+			s.Failure(w, err)
 			return
 		}
-
-		response := MessageResponse{Message: "password reset successfully"}
-		s.Success(w, response)
+		s.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
-	// here there is no pending email verification code
-	if hasCode {
-		// since there is no pending verification code to match and verify to
-		// so we directly return error, as code might have been expired.
+	// From here we have pending requests that needs to be completed
+	if !hasCode {
+		timeDifference := time.Since(pending.CreatedAt)
+		if timeDifference < cooldownTime {
+			tryAfter := cooldownTime - timeDifference
+			err = fmt.Errorf("recently requested, please try again after %s", tryAfter)
+			s.Failure(w, err, http.StatusBadRequest)
+			return
+		}
+		// request is pending but no code provided so we reject with invalid code
 		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
-	// here we only send email verification code
-
-	emailPayload := payload.NewResetPasswordPayload(res.User)
-	err = s.tasks.ResetPassword(r.Context(), emailPayload,
-		asynq.MaxRetry(2), asynq.Group(worker.PriorityLow),
-		asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(100, 600))),
-	)
-	if err != nil {
-		s.Failure(w, err)
+	// Here we have pending request and code is also provided, we check and update
+	if !email.IsEqual(pending.Email) {
+		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
-	message := MessageResponse{Message: checkYourInbox}
-	s.Success(w, message)
+	if param.Code != pending.Code {
+		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		return
+	}
+
+	password, passErr := vo.NewPassword(param.NewPassword)
+	if passErr != nil {
+		s.Failure(w, passErr, http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, hashErr := password.HashPassword()
+	if hashErr != nil {
+		s.Failure(w, hashErr)
+		return
+	}
+
+	updateParams := users.UserUpdatePasswordTxParams{
+		UserID:   res.User.ID,
+		Password: hashedPassword,
+		AfterUpdate: func() error {
+			return s.cache.Delete(r.Context(), actionKey)
+		},
+	}
+
+	res = s.repo.UserUpdatePasswordTx(r.Context(), updateParams)
+	if res.Error != nil {
+		s.Failure(w, res.Error, res.StatusCode)
+		return
+	}
+
+	s.Success(w, MessageResponse{Message: "password reset successfully"})
+}
+
+func resetPasswordEmailBody(code string, validFor time.Duration) string {
+	sb := &utils.StringBuilder{}
+	sb.WriteLine("<p>Dear User,</p>")
+	sb.WriteLine("<p>You have requested to reset your password.</p>")
+	sb.WriteLine("<p>Please use the code below to reset your password:</p>")
+	sb.WriteLine(fmt.Sprintf("<p><strong>Reset Code:</strong> %s</p>", code))
+	sb.WriteLine(fmt.Sprintf("<p><em>This code is valid for the next %s.</em></p>", validFor))
+	sb.WriteLine("<p>If you did not request this, please ignore this email.</p>")
+	return sb.String()
 }

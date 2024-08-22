@@ -19,6 +19,7 @@ import (
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	"github.com/sirjager/goth/repository/users"
 	"github.com/sirjager/goth/vo"
+	mockTask "github.com/sirjager/goth/worker/mock"
 )
 
 func TestSignup(t *testing.T) {
@@ -179,6 +180,8 @@ func TestSignup(t *testing.T) {
 
 			repo := mockRepo.NewMockRepo(ctrl)
 			tc.stubs(repo)
+
+			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
 			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)

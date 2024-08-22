@@ -7,6 +7,22 @@ import (
 	"github.com/sirjager/goth/entity"
 )
 
+type AuthTokeType int
+
+const (
+	TypeAccess AuthTokeType = iota
+	TypeRefresh
+)
+
+// String method to convert the enum to a string for easy printing
+func (e AuthTokeType) String() string {
+	tokenType := []string{"AccessToken", "RefreshToken"}
+	if e < TypeAccess || e > TypeRefresh {
+		return "Unknown"
+	}
+	return tokenType[e]
+}
+
 type BaseAuthPayload struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	UserID    string    `json:"userID,omitempty"`
@@ -29,7 +45,6 @@ func (b *RefreshToken) IsEqual(other RefreshToken) bool {
 	}
 	return true
 }
-
 
 func (b *AccessToken) IsEqual(other AccessToken) bool {
 	if b.CreatedAt != other.CreatedAt {
@@ -71,7 +86,7 @@ func NewAccessPayload(user *entity.User, sessionID string) *AccessToken {
 			CreatedAt: time.Now(),
 			SessionID: sessionID,
 			UserID:    user.ID.Value().String(),
-			TokenType: TypeAccess,
+			TokenType: TypeAccess.String(),
 		},
 	}
 }
@@ -82,7 +97,7 @@ func NewRefreshPayload(user *entity.User, sessionID string) *RefreshToken {
 			CreatedAt: time.Now(),
 			SessionID: sessionID,
 			UserID:    user.ID.Value().String(),
-			TokenType: TypeRefresh,
+			TokenType: TypeRefresh.String(),
 		},
 	}
 }

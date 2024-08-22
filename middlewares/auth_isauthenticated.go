@@ -48,7 +48,7 @@ func IsAuthenticated(
 		if incoming.SessionID != stored.SessionID {
 			return nil, false
 		}
-		if incoming.TokenType != payload.TypeAccess {
+		if incoming.TokenType != payload.TypeAccess.String() {
 			return nil, false
 		}
 

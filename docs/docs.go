@@ -43,7 +43,7 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "get": {
-                "description": "Reset Password",
+                "description": "Refreshes Access Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -53,7 +53,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Reset",
+                "summary": "Refresh",
                 "parameters": [
                     {
                         "type": "boolean",
@@ -76,6 +76,33 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/auth/reset": {
+            "post": {
+                "description": "Reset Password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset",
+                "parameters": [
+                    {
+                        "description": "ResetPasswordParams",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ResetPasswordParams"
+                        }
+                    }
+                ],
+                "responses": {}
             }
         },
         "/auth/signin": {
@@ -579,6 +606,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ResetPasswordParams": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "newPassword": {
                     "type": "string"
                 }
             }

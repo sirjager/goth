@@ -9,6 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	mockRepo "github.com/sirjager/goth/repository/mock"
+	mockTask "github.com/sirjager/goth/worker/mock"
 )
 
 func TestSwaggerDocs(t *testing.T) {
@@ -30,6 +31,7 @@ func TestSwaggerDocs(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			repo := mockRepo.NewMockRepo(ctrl)
+			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
 			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
 			recoder := httptest.NewRecorder()

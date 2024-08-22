@@ -11,9 +11,9 @@ func UserSessionsKey(userID string) string {
 }
 
 func SessionRefreshKey(userID, sessionID string) string {
-	return fmt.Sprintf("sess:%s:%s:%s", userID, sessionID, TypeRefresh)
+	return fmt.Sprintf("sess:%s:%s:%d", userID, sessionID, TypeRefresh)
 }
 
 func SessionAccessKey(userID, sessionID string) string {
-	return fmt.Sprintf("sess:%s:%s:%s", userID, sessionID, TypeAccess)
+	return fmt.Sprintf("sess:%s:%s:%d", userID, sessionID, TypeAccess)
 }

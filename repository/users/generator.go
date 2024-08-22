@@ -6,7 +6,7 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-func (r *userRepo) ToUserEntity(dbUser sqlc.User) *entity.User {
+func (r *repo) ToUserEntity(dbUser sqlc.User) *entity.User {
 	return &entity.User{
 		ID:                          vo.MustParseID(dbUser.ID.String()),
 		Email:                       vo.MustParseEmail(dbUser.Email),

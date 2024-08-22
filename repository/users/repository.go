@@ -14,19 +14,20 @@ import (
 )
 
 type UserRepository interface {
-	UserCreate(c context.Context, user *entity.User) UserReadResult
-	UserDelete(c context.Context, userID *vo.ID) UserDeleteResult
-	UserGetMaster(c context.Context) UserReadResult
-	UserGetAll(c context.Context, limit, page int) UsersReadResult
-	UserGetByID(c context.Context, userID *vo.ID) UserReadResult
-	UserGetByEmail(c context.Context, email *vo.Email) UserReadResult
-	UserGetByUsername(c context.Context, username *vo.Username) UserReadResult
-	UserUpdate(c context.Context, user *entity.User) UserReadResult
-	UserUpdateVerified(c context.Context, userID *vo.ID, status bool) UserReadResult
-	UserUpdatePassword(c context.Context, userID *vo.ID, pass *vo.HashedPassword) UserReadResult
+	UserCreate(ctx context.Context, user *entity.User) UserReadResult
+	UserDelete(ctx context.Context, userID *vo.ID) UserDeleteResult
+	UserGetMaster(ctx context.Context) UserReadResult
+	UserGetAll(ctx context.Context, limit, page int) UsersReadResult
+	UserGetByID(ctx context.Context, userID *vo.ID) UserReadResult
+	UserGetByEmail(ctx context.Context, email *vo.Email) UserReadResult
+	UserGetByUsername(ctx context.Context, username *vo.Username) UserReadResult
+	UserUpdate(ctx context.Context, user *entity.User) UserReadResult
+	UserUpdateVerified(ctx context.Context, userID *vo.ID, status bool) UserReadResult
+	UserUpdatePassword(ctx context.Context, userID *vo.ID, pass *vo.HashedPassword) UserReadResult
+	UserUpdatePasswordTx(ctx context.Context, params UserUpdatePasswordTxParams) UserReadResult
 }
 
-type userRepo struct {
+type repo struct {
 	logr  zerolog.Logger
 	store sqlc.Store
 	pool  *pgxpool.Pool
@@ -39,7 +40,7 @@ func NewUsersRepo(conn *pgxpool.Pool, pgURL string, l zerolog.Logger) (UserRepos
 	}
 
 	store := sqlc.NewStore(conn)
-	repo := &userRepo{logr: l, store: store, pool: conn}
+	repo := &repo{logr: l, store: store, pool: conn}
 	l.Info().Msg("users repository initialized")
 	return repo, nil
 }

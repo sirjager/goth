@@ -6,22 +6,11 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
-
-	"github.com/sirjager/goth/payload"
 )
 
 type TaskDistributor interface {
 	Shutdown()
-	ResetPassword(
-		ctx context.Context,
-		payload *payload.ResetPassword,
-		opts ...asynq.Option,
-	) error
-	SendEmailVerification(
-		ctx context.Context,
-		payload *payload.VerifyEmail,
-		opts ...asynq.Option,
-	) error
+	SendEmail(ctx context.Context, payload SendEmailParams, opts ...asynq.Option) error
 }
 
 type dist struct {

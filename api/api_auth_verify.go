@@ -31,11 +31,15 @@ type EmailVerificationResponse struct {
 //	@Param			code	query		string	false	"Email verification code if already have any"
 //	@Success		200		{string}	string	"Success message"
 func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	queryParamVerifyEmail := r.URL.Query().Get("email")
-	queryParamVerifyCode := r.URL.Query().Get("code")
-	hasVerificationCode := len(queryParamVerifyCode) != 0
+	emailQueryParam := r.URL.Query().Get("email")
+	codeQueryParam := r.URL.Query().Get("code")
 
-	email, err := vo.NewEmail(queryParamVerifyEmail)
+	hasCode := len(codeQueryParam) != 0
+	emailAction := payload.EmailVerification
+	cooldownTime := s.config.AuthEmailVerifyCooldown
+	codeExpiration := s.config.AuthEmailVerifyExpire
+
+	email, err := vo.NewEmail(emailQueryParam)
 	if err != nil {
 		s.logr.Error().Err(err).Msg("invalid email")
 		s.Failure(w, err, http.StatusBadRequest)
@@ -43,35 +47,29 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := s.repo.UserGetByEmail(r.Context(), email)
-	user := res.User
-
-	if res.Error == nil && user.Verified {
-		s.SuccessOK(w, "email already verified")
-		return
-	}
-
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
-			s.Failure(w, res.Error)
+			s.Failure(w, res.Error, res.StatusCode)
 			return
 		}
-		if !hasVerificationCode {
-			s.logr.Error().Msg("user not found, no verification code")
-			message := EmailVerificationResponse{Message: "check email for further instructions"}
-			s.Success(w, message)
+		if hasCode {
+			s.Failure(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
-
-		s.logr.Error().Msg("user not found, has verification code")
-		s.Failure(w, errInvalidCode, http.StatusBadRequest)
+		s.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
-	verificationCodeKey := fmt.Sprintf("verify:%s", user.Email.Value())
+	if res.User.Verified {
+		s.Success(w, MessageResponse{Message: "email already verified"})
+		return
+	}
 
+	// if request is already pending then return error with try again message
 	isAlreadyPending := true
-	var pending payload.VerifyEmail
-	if err = s.cache.Get(r.Context(), verificationCodeKey, &pending); err != nil {
+	var pending payload.EmailPayload
+	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
+	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			s.Failure(w, err)
 			return
@@ -79,67 +77,81 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		isAlreadyPending = false
 	}
 
-	if isAlreadyPending && !hasVerificationCode {
+	if !isAlreadyPending {
+		if hasCode {
+			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			return
+		}
+		mailCode := utils.RandomNumberAsString(6)
+		mailSub := "Email Verification Requested"
+		payload := payload.EmailPayload{
+			Email:     res.User.Email.Value(),
+			Body:      emailVerificationBody(mailCode, codeExpiration),
+			Subject:   mailSub,
+			Type:      emailAction,
+			Code:      mailCode, // this will be used to validate code
+			CacheKey:  payload.EmailKey(res.User.Email.Value(), emailAction),
+			CacheExp:  codeExpiration,
+			CreatedAt: time.Now(),
+		}
+		token, _, tokenErr := s.toknb.CreateToken(payload, codeExpiration)
+		if tokenErr != nil {
+			s.Failure(w, tokenErr)
+			return
+		}
+
+		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
+			asynq.MaxRetry(3), asynq.Group(worker.PriorityLow),
+			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
+		); err != nil {
+			s.Failure(w, err)
+			return
+		}
+		s.Success(w, MessageResponse{Message: checkYourInbox})
+		return
+	}
+
+	// From here we have pending requests that needs to be completed
+	if !hasCode {
 		timeDifference := time.Since(pending.CreatedAt)
-		if timeDifference < s.config.AuthEmailVerifyCooldown {
-			tryAfter := s.config.AuthEmailVerifyCooldown - timeDifference
+		if timeDifference < cooldownTime {
+			tryAfter := cooldownTime - timeDifference
 			err = fmt.Errorf("recently requested, please try again after %s", tryAfter)
 			s.Failure(w, err, http.StatusBadRequest)
 			return
 		}
-
-		s.logr.Error().Msg("pending verification, no email verification code")
-		// since no email verification code is provided
-		s.Failure(w, errInvalidCode, http.StatusBadRequest)
+		// request is pending but no code provided so we reject with invalid code
+		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
-	if isAlreadyPending && hasVerificationCode {
-		// we dont have to verify payload or anything else
-		// in cache after expration, cache automatically deletes it
-		// so it exists means code is still valid, just have to match it
-		if !email.IsEqual(pending.Email) {
-			s.logr.Error().Msg("pending verification, mismatch email")
-			s.Failure(w, errInvalidCode, http.StatusBadRequest)
-			return
-		}
-		if queryParamVerifyCode != pending.Code {
-			s.logr.Error().Msg("pending verification, mismatch verification code")
-			s.Failure(w, errInvalidCode, http.StatusBadRequest)
-			return
-		}
-
-		// now update it to users repository
-		res = s.repo.UserUpdateVerified(r.Context(), user.ID, true)
-		if res.Error != nil {
-			s.Failure(w, res.Error, res.StatusCode)
-			return
-		}
-
-		response := EmailVerificationResponse{Message: "email successfully verified"}
-		s.Success(w, response)
+	// Here we have pending request and code is also provided, we check and update
+	if !email.IsEqual(pending.Email) {
+		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		return
+	}
+	if codeQueryParam != pending.Code {
+		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
-	// here there is no pending email verification code
-	if hasVerificationCode {
-		// since there is no pending verification code, to match and verify to
-		// so we directly return error, as code might have been expired.
-		s.Failure(w, errInvalidCode, http.StatusBadRequest)
+	// now update it to users repository
+	res = s.repo.UserUpdateVerified(r.Context(), res.User.ID, true)
+	if res.Error != nil {
+		s.Failure(w, res.Error, res.StatusCode)
 		return
 	}
 
-	// here we only send email verification code
+	response := EmailVerificationResponse{Message: "email successfully verified"}
+	s.Success(w, response)
+}
 
-	payload := payload.NewVerifyEmailPayload(user)
-	err = s.tasks.SendEmailVerification(r.Context(), payload,
-		asynq.MaxRetry(2), asynq.Group(worker.PriorityLow),
-		asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(100, 600))),
-	)
-	if err != nil {
-		s.Failure(w, err)
-		return
-	}
-
-	s.SuccessOK(w, "check your inbox for further instructions")
+func emailVerificationBody(code string, validFor time.Duration) string {
+	sb := &utils.StringBuilder{}
+	sb.WriteLine("<p>Dear User,</p>")
+	sb.WriteLine("<p>Please use the code to verify your email:</p>")
+	sb.WriteLine(fmt.Sprintf("<p><strong>Code:</strong> %s</p>", code))
+	sb.WriteLine(fmt.Sprintf("<p><em>This code is valid for the next %s.</em></p>", validFor))
+	sb.WriteLine("<p>If you did not request this, please ignore this email.</p>")
+	return sb.String()
 }

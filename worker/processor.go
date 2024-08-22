@@ -16,7 +16,7 @@ import (
 type TaskProcessor interface {
 	Start() error
 	Shutdown()
-	SendEmailVerification(ctx context.Context, tasks *asynq.Task) error
+	SendEmail(ctx context.Context, task *asynq.Task) error
 }
 
 const (
@@ -32,7 +32,7 @@ type proc struct {
 	repo   repository.Repo
 	mail   mail.Sender
 	cache  cache.Cache
-	tokens tokens.TokenBuilder
+	toknb  tokens.TokenBuilder
 	server *asynq.Server
 	config *config.Config
 }
@@ -73,7 +73,7 @@ func newTaskProcessor(
 		repo:   repo,
 		mail:   mail,
 		cache:  cache,
-		tokens: tokens,
+		toknb:  tokens,
 		config: config,
 	}, nil
 }
@@ -82,7 +82,7 @@ func newTaskProcessor(
 func (p *proc) Start() error {
 	mux := asynq.NewServeMux()
 
-	mux.HandleFunc(TaskSendEmailVerification, p.SendEmailVerification)
+	mux.HandleFunc(TaskSendEmail, p.SendEmail)
 
 	return p.server.Start(mux)
 }

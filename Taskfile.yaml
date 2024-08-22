@@ -118,4 +118,5 @@ tasks:
     desc: Mock for tests
     cmds:
       - mockgen -package mockRepo -destination repository/mock/repository.go github.com/sirjager/{{.REPOSITORY}}/repository Repo
+      - mockgen -package mockTask -destination worker/mock/distributor.go github.com/sirjager/{{.REPOSITORY}}/worker TaskDistributor
 

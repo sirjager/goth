@@ -168,6 +168,20 @@ func (mr *MockRepoMockRecorder) UserUpdatePassword(arg0, arg1, arg2 any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserUpdatePassword", reflect.TypeOf((*MockRepo)(nil).UserUpdatePassword), arg0, arg1, arg2)
 }
 
+// UserUpdatePasswordTx mocks base method.
+func (m *MockRepo) UserUpdatePasswordTx(arg0 context.Context, arg1 users.UserUpdatePasswordTxParams) users.UserReadResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserUpdatePasswordTx", arg0, arg1)
+	ret0, _ := ret[0].(users.UserReadResult)
+	return ret0
+}
+
+// UserUpdatePasswordTx indicates an expected call of UserUpdatePasswordTx.
+func (mr *MockRepoMockRecorder) UserUpdatePasswordTx(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserUpdatePasswordTx", reflect.TypeOf((*MockRepo)(nil).UserUpdatePasswordTx), arg0, arg1)
+}
+
 // UserUpdateVerified mocks base method.
 func (m *MockRepo) UserUpdateVerified(arg0 context.Context, arg1 *vo.ID, arg2 bool) users.UserReadResult {
 	m.ctrl.T.Helper()
