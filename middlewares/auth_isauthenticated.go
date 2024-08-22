@@ -59,7 +59,7 @@ func IsAuthenticated(
 		}
 		user = res.User
 	}
-	if user != nil {
+	if user != nil && user.Email.Value() != "" {
 		return user, true
 	}
 	return nil, false

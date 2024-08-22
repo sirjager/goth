@@ -70,6 +70,20 @@ func (mr *MockRepoMockRecorder) UserDelete(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserDelete", reflect.TypeOf((*MockRepo)(nil).UserDelete), arg0, arg1)
 }
 
+// UserDeleteTx mocks base method.
+func (m *MockRepo) UserDeleteTx(arg0 context.Context, arg1 users.UserDeleteTxParams) users.UserDeleteResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserDeleteTx", arg0, arg1)
+	ret0, _ := ret[0].(users.UserDeleteResult)
+	return ret0
+}
+
+// UserDeleteTx indicates an expected call of UserDeleteTx.
+func (mr *MockRepoMockRecorder) UserDeleteTx(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserDeleteTx", reflect.TypeOf((*MockRepo)(nil).UserDeleteTx), arg0, arg1)
+}
+
 // UserGetAll mocks base method.
 func (m *MockRepo) UserGetAll(arg0 context.Context, arg1, arg2 int) users.UsersReadResult {
 	m.ctrl.T.Helper()

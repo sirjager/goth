@@ -34,6 +34,30 @@
                 }
             }
         },
+        "/auth/delete": {
+            "get": {
+                "description": "Delete User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code if already have",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/refresh": {
             "get": {
                 "description": "Refreshes Access Token",
@@ -91,7 +115,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.ResetPasswordParams"
+                            "$ref": "#/definitions/ResetPasswordParams"
                         }
                     }
                 ],
@@ -217,7 +241,7 @@
             }
         },
         "/auth/verify": {
-            "post": {
+            "get": {
                 "description": "Email Verification",
                 "consumes": [
                     "application/json"
@@ -470,6 +494,20 @@
                 }
             }
         },
+        "ResetPasswordParams": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string"
+                }
+            }
+        },
         "SignInResponse": {
             "type": "object",
             "properties": {
@@ -599,20 +637,6 @@
                     "type": "string"
                 },
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.ResetPasswordParams": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "newPassword": {
                     "type": "string"
                 }
             }

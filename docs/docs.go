@@ -41,6 +41,30 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/delete": {
+            "get": {
+                "description": "Delete User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code if already have",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/refresh": {
             "get": {
                 "description": "Refreshes Access Token",
@@ -98,7 +122,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.ResetPasswordParams"
+                            "$ref": "#/definitions/ResetPasswordParams"
                         }
                     }
                 ],
@@ -224,7 +248,7 @@ const docTemplate = `{
             }
         },
         "/auth/verify": {
-            "post": {
+            "get": {
                 "description": "Email Verification",
                 "consumes": [
                     "application/json"
@@ -477,6 +501,20 @@ const docTemplate = `{
                 }
             }
         },
+        "ResetPasswordParams": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string"
+                }
+            }
+        },
         "SignInResponse": {
             "type": "object",
             "properties": {
@@ -606,20 +644,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.ResetPasswordParams": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "newPassword": {
                     "type": "string"
                 }
             }

@@ -26,7 +26,7 @@ type EmailVerificationResponse struct {
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/verify [post]
+//	@Router			/auth/verify [get]
 //	@Param			email	query		string	true	"Email to verify"
 //	@Param			code	query		string	false	"Email verification code if already have any"
 //	@Success		200		{string}	string	"Success message"

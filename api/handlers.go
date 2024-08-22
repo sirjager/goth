@@ -32,6 +32,9 @@ func (a *Server) MountHandlers() {
 		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
 			Get("/user", a.AuthUser)
 
+		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
+			Get("/delete", a.Delete)
+
 		r.With(mw.RequiresRefreshToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
 			Get("/refresh", a.RefreshToken)
 

@@ -22,7 +22,7 @@ type ResetPasswordParams struct {
 	Email       string `json:"email,omitempty"`
 	Code        string `json:"code,omitempty"`
 	NewPassword string `json:"newPassword,omitempty"`
-}
+} // @name ResetPasswordParams
 
 // Reset Password
 //
@@ -73,7 +73,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 	// if request is already pending then return error with try again message
 	isAlreadyPending := true
 	var pending payload.EmailPayload
-	actionKey := payload.EmailKey(res.User.Email.Value(), payload.PasswordReset)
+	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
 	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			s.Failure(w, err)

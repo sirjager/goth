@@ -16,6 +16,7 @@ import (
 type UserRepository interface {
 	UserCreate(ctx context.Context, user *entity.User) UserReadResult
 	UserDelete(ctx context.Context, userID *vo.ID) UserDeleteResult
+	UserDeleteTx(ctx context.Context, params UserDeleteTxParams) UserDeleteResult
 	UserGetMaster(ctx context.Context) UserReadResult
 	UserGetAll(ctx context.Context, limit, page int) UsersReadResult
 	UserGetByID(ctx context.Context, userID *vo.ID) UserReadResult

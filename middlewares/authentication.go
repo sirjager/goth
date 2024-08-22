@@ -22,10 +22,11 @@ const (
 )
 
 const (
-	AuthProviderOAuth   AuthProvder = "oauth"
-	AuthProviderTokens  AuthProvder = "tokens"
-	ContextAuthProvider AuthProvder = "ctx_auth_provider"
-	ContextKeyUser      contextType = "ctx_authenticated_user"
+	AuthProviderOAuth       AuthProvder = "oauth"
+	AuthProviderTokens      AuthProvder = "tokens"
+	ContextAuthProvider     AuthProvder = "ctx_auth_provider"
+	ContextKeyUser          contextType = "ctx_authenticated_user"
+	ContextKeyAccessPayload contextType = "ctx_access_payload"
 )
 
 // UserOrPanic assert that the user is authenticated, set by RequiresAuth middleware
