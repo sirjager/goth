@@ -9,7 +9,7 @@ import (
 )
 
 type SignUpRequestParams struct {
-	Username string `json:"username,omitempty" validate:""`
+	Username string `json:"username,omitempty"`
 	Email    string `json:"email,omitempty"    validate:"required,gte=3"`
 	Password string `json:"password,omitempty" validate:"required"`
 } // @name SignUpRequestParams

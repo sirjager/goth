@@ -2,8 +2,10 @@ package users
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/sirjager/goth/entity"
+	repoerrors "github.com/sirjager/goth/repository/errors"
 	"github.com/sirjager/goth/repository/users/sqlc"
 	"github.com/sirjager/goth/vo"
 )
@@ -30,7 +32,11 @@ func (r *repo) UserUpdateVerified(ctx context.Context, uid *vo.ID, status bool) 
 	})
 }
 
-func (r *repo) UserUpdatePassword(ctx context.Context,userID *vo.ID,password *vo.HashedPassword) UserReadResult {
+func (r *repo) UserUpdatePassword(
+	ctx context.Context,
+	userID *vo.ID,
+	password *vo.HashedPassword,
+) UserReadResult {
 	return r._userReadCommon(func() (sqlc.User, error) {
 		return r.store.UserUpdatePassword(ctx, sqlc.UserUpdatePasswordParams{
 			ID:       userID.Value(),
@@ -46,7 +52,10 @@ type UserUpdatePasswordTxParams struct {
 	AfterUpdate  func() error
 }
 
-func (r *repo) UserUpdatePasswordTx(ctx context.Context, params UserUpdatePasswordTxParams) UserReadResult {
+func (r *repo) UserUpdatePasswordTx(
+	ctx context.Context,
+	params UserUpdatePasswordTxParams,
+) UserReadResult {
 	var res UserReadResult
 	err := r.ExecTx(ctx, func() error {
 		if params.BeforeUpdate != nil {
@@ -87,6 +96,6 @@ func (r *repo) UserUpdatePasswordTx(ctx context.Context, params UserUpdatePasswo
 		return res
 	}
 
-  res.StatusCode = http.StatusOK
+	res.StatusCode = http.StatusOK
 	return res
 }
