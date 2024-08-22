@@ -11,13 +11,13 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 )
 
-//	@Summary		OAuth
-//	@Description	Authenticates a user with a specified oauth provider
-//	@Tags			Auth
-//	@Produce		json
-//	@Router			/auth/{provider} [get]
-//	@Param			provider	path		string			true	"OAuth provider name"	Enums(google, github)
-//	@Success		200			{object}	UserResponse	"User object"
+// @Summary		OAuth
+// @Description	Authenticates a user with a specified oauth provider
+// @Tags			Auth
+// @Produce		json
+// @Router			/auth/{provider} [get]
+// @Param			provider	path		string			true	"OAuth provider name [google,github]"	Enums(google, github)
+// @Success		200			{object}	UserResponse	"User object"
 func (a *Server) OAuthProvider(w http.ResponseWriter, r *http.Request) {
 	refererURL := r.Header.Get("Referer")
 	parsedURL, err := url.Parse(refererURL)
@@ -29,7 +29,7 @@ func (a *Server) OAuthProvider(w http.ResponseWriter, r *http.Request) {
 	refererURL = parsedURL.Scheme + "://" + parsedURL.Host
 
 	provider := chi.URLParam(r, "provider")
-	if user, authenticated := mw.IsAuthenticated(r, a.repo, a.tokens, a.cache); authenticated {
+	if user, authenticated := mw.IsAuthenticated(r, a.repo, a.toknb, a.cache); authenticated {
 		response := UserResponse{User: user.Profile()}
 		a.Success(w, response)
 		return

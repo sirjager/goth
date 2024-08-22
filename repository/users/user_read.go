@@ -24,31 +24,31 @@ type UsersReadResult struct {
 	StatusCode int
 }
 
-func (r *userRepo) UserGetByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
+func (r *repo) UserGetByID(ctx context.Context, userID *vo.ID) (res UserReadResult) {
 	return r._userReadCommon(func() (sqlc.User, error) {
 		return r.store.UserRead(ctx, userID.Value())
 	})
 }
 
-func (r *userRepo) UserGetByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
+func (r *repo) UserGetByEmail(ctx context.Context, email *vo.Email) (res UserReadResult) {
 	return r._userReadCommon(func() (sqlc.User, error) {
 		return r.store.UserReadByEmail(ctx, email.Value())
 	})
 }
 
-func (r *userRepo) UserGetByUsername(ctx context.Context, u *vo.Username) (res UserReadResult) {
+func (r *repo) UserGetByUsername(ctx context.Context, u *vo.Username) (res UserReadResult) {
 	return r._userReadCommon(func() (sqlc.User, error) {
 		return r.store.UserReadByUsername(ctx, u.Value())
 	})
 }
 
-func (r *userRepo) UserGetMaster(ctx context.Context) (res UserReadResult) {
+func (r *repo) UserGetMaster(ctx context.Context) (res UserReadResult) {
 	return r._userReadCommon(func() (sqlc.User, error) {
 		return r.store.UserReadMaster(ctx)
 	})
 }
 
-func (r *userRepo) UserGetAll(ctx context.Context, limit, page int) (res UsersReadResult) {
+func (r *repo) UserGetAll(ctx context.Context, limit, page int) (res UsersReadResult) {
 	arg := sqlc.UsersReadParams{}
 	if limit > 0 {
 		arg.Limit = pgtype.Int4{Int32: int32(limit), Valid: true}
@@ -77,7 +77,7 @@ func (r *userRepo) UserGetAll(ctx context.Context, limit, page int) (res UsersRe
 	return
 }
 
-func (r *userRepo) _userReadCommon(call func() (sqlc.User, error)) (res UserReadResult) {
+func (r *repo) _userReadCommon(call func() (sqlc.User, error)) (res UserReadResult) {
 	dbuser, err := call()
 	if err != nil {
 		res.StatusCode = http.StatusInternalServerError

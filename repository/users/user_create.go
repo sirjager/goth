@@ -12,7 +12,7 @@ import (
 	"github.com/sirjager/goth/repository/users/sqlc"
 )
 
-func (r *userRepo) UserCreate(c context.Context, user *entity.User) (res UserReadResult) {
+func (r *repo) UserCreate(c context.Context, user *entity.User) (res UserReadResult) {
 	dbuser, err := r.store.UserCreate(c, sqlc.UserCreateParams{
 		ID:         uuid.New(),
 		Email:      user.Email.Value(),

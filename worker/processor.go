@@ -16,7 +16,7 @@ import (
 type TaskProcessor interface {
 	Start() error
 	Shutdown()
-	SendEmailVerification(ctx context.Context, tasks *asynq.Task) error
+	SendEmail(ctx context.Context, task *asynq.Task) error
 }
 
 const (
@@ -27,19 +27,19 @@ const (
 	PriorityLazy     = "lazy"
 )
 
-type processor struct {
+type proc struct {
 	logr   zerolog.Logger
-	repo   repository.Repository
+	repo   repository.Repo
 	mail   mail.Sender
 	cache  cache.Cache
-	tokens tokens.TokenBuilder
+	toknb  tokens.TokenBuilder
 	server *asynq.Server
 	config *config.Config
 }
 
 func newTaskProcessor(
 	logr zerolog.Logger,
-	repo repository.Repository,
+	repo repository.Repo,
 	mail mail.Sender,
 	cache cache.Cache,
 	tokens tokens.TokenBuilder,
@@ -67,26 +67,26 @@ func newTaskProcessor(
 
 	server := asynq.NewServer(opts, clientConfig)
 
-	return &processor{
+	return &proc{
 		server: server,
 		logr:   logr,
 		repo:   repo,
 		mail:   mail,
 		cache:  cache,
-		tokens: tokens,
+		toknb:  tokens,
 		config: config,
 	}, nil
 }
 
 // Start starts the RedisTaskProcessor
-func (p *processor) Start() error {
+func (p *proc) Start() error {
 	mux := asynq.NewServeMux()
 
-	mux.HandleFunc(TaskSendEmailVerification, p.SendEmailVerification)
+	mux.HandleFunc(TaskSendEmail, p.SendEmail)
 
 	return p.server.Start(mux)
 }
 
-func (p *processor) Shutdown() {
+func (p *proc) Shutdown() {
 	p.server.Shutdown()
 }

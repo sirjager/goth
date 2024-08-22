@@ -10,14 +10,10 @@ import (
 
 type TaskDistributor interface {
 	Shutdown()
-	SendEmailVerification(
-		ctx context.Context,
-		payload SendEmailVerificationPayload,
-		opts ...asynq.Option,
-	) error
+	SendEmail(ctx context.Context, payload SendEmailParams, opts ...asynq.Option) error
 }
 
-type distributor struct {
+type dist struct {
 	client *asynq.Client
 	logr   zerolog.Logger
 }
@@ -32,10 +28,10 @@ func NewTaskDistributor(logr zerolog.Logger, redisOptions *redis.Options) TaskDi
 		TLSConfig: redisOptions.TLSConfig,
 		PoolSize:  redisOptions.PoolSize,
 	})
-	return &distributor{client, logr}
+	return &dist{client, logr}
 }
 
 // close redis
-func (d *distributor) Shutdown() {
+func (d *dist) Shutdown() {
 	d.client.Close()
 }

@@ -76,7 +76,7 @@ func storeUserSession(w http.ResponseWriter, r *http.Request, user goth.User) er
 	return nil
 }
 
-func masterUserExists(c context.Context, repo repository.Repository) (bool, error) {
+func masterUserExists(c context.Context, repo repository.Repo) (bool, error) {
 	master := repo.UserGetMaster(c)
 	if master.Error != nil {
 		if master.StatusCode != http.StatusNotFound {

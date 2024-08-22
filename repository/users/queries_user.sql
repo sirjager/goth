@@ -38,3 +38,7 @@ SELECT * FROM "users" where master = true LIMIT 1;
 
 -- name: UserUpdateVerified :one
 UPDATE "users" SET verified = $1 WHERE id = @id RETURNING *;
+
+-- name: UserUpdatePassword :one
+UPDATE "users" SET password = $1 WHERE id = @id RETURNING *;
+

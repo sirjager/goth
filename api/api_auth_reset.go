@@ -11,37 +11,42 @@ import (
 	"github.com/sirjager/gopkg/utils"
 
 	"github.com/sirjager/goth/payload"
+	"github.com/sirjager/goth/repository/users"
 	"github.com/sirjager/goth/vo"
 	"github.com/sirjager/goth/worker"
 )
 
-type EmailVerificationResponse struct {
-	Message string `json:"message,omitempty"`
-} //	@name	EmailVerificationResponse
+const checkYourInbox = "check your inbox for further instructions"
 
-// Verify Email
+type ResetPasswordParams struct {
+	Email       string `json:"email,omitempty"`
+	Code        string `json:"code,omitempty"`
+	NewPassword string `json:"newPassword,omitempty"`
+} // @name ResetPasswordParams
+
+// Reset Password
 //
-//	@Summary		Verify
-//	@Description	Email Verification
+//	@Summary		Reset
+//	@Description	Reset Password
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/verify [get]
-//	@Param			email	query		string	true	"Email to verify"
-//	@Param			code	query		string	false	"Email verification code if already have any"
-//	@Success		200		{string}	string	"Success message"
-func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	emailQueryParam := r.URL.Query().Get("email")
-	codeQueryParam := r.URL.Query().Get("code")
+//	@Router			/auth/reset [post]
+//	@Param			body	body	ResetPasswordParams	true	"ResetPasswordParams"
+func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
+	var param ResetPasswordParams
+	if err := s.ParseAndValidate(r, &param, ValidationDisable); err != nil {
+		s.Failure(w, err, http.StatusBadRequest)
+		return
+	}
 
-	hasCode := len(codeQueryParam) != 0
-	emailAction := payload.EmailVerification
-	cooldownTime := s.config.AuthEmailVerifyCooldown
-	codeExpiration := s.config.AuthEmailVerifyExpire
+	hasCode := len(param.Code) != 0
+	emailAction := payload.PasswordReset
+	cooldownTime := s.config.AuthPasswordResetCooldown
+	codeExpiration := s.config.AuthPasswordResetExpire
 
-	email, err := vo.NewEmail(emailQueryParam)
+	email, err := vo.NewEmail(param.Email)
 	if err != nil {
-		s.logr.Error().Err(err).Msg("invalid email")
 		s.Failure(w, err, http.StatusBadRequest)
 		return
 	}
@@ -60,8 +65,8 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if res.User.Verified {
-		s.Success(w, MessageResponse{Message: "email already verified"})
+	if !res.User.Verified {
+		s.Failure(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
 		return
 	}
 
@@ -83,10 +88,10 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		mailCode := utils.RandomNumberAsString(6)
-		mailSub := "Email Verification Requested"
+		mailSub := "Password Reset Requested"
 		payload := payload.EmailPayload{
 			Email:     res.User.Email.Value(),
-			Body:      emailVerificationBody(mailCode, codeExpiration),
+			Body:      resetPasswordEmailBody(mailCode, codeExpiration),
 			Subject:   mailSub,
 			Type:      emailAction,
 			Code:      mailCode, // this will be used to validate code
@@ -94,14 +99,14 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 			CacheExp:  codeExpiration,
 			CreatedAt: time.Now(),
 		}
-		token, _, tokenErr := s.toknb.CreateToken(payload, codeExpiration)
-		if tokenErr != nil {
-			s.Failure(w, tokenErr)
+		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
+		if err != nil {
+			s.Failure(w, err)
 			return
 		}
 
 		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
-			asynq.MaxRetry(3), asynq.Group(worker.PriorityLow),
+			asynq.MaxRetry(3), asynq.Group(worker.PriorityUrgent),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
 		); err != nil {
 			s.Failure(w, err)
@@ -130,27 +135,46 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
-	if codeQueryParam != pending.Code {
+	if param.Code != pending.Code {
 		s.Failure(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
-	// now update it to users repository
-	res = s.repo.UserUpdateVerified(r.Context(), res.User.ID, true)
+	password, passErr := vo.NewPassword(param.NewPassword)
+	if passErr != nil {
+		s.Failure(w, passErr, http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, hashErr := password.HashPassword()
+	if hashErr != nil {
+		s.Failure(w, hashErr)
+		return
+	}
+
+	updateParams := users.UserUpdatePasswordTxParams{
+		UserID:   res.User.ID,
+		Password: hashedPassword,
+		AfterUpdate: func() error {
+			return s.cache.Delete(r.Context(), actionKey)
+		},
+	}
+
+	res = s.repo.UserUpdatePasswordTx(r.Context(), updateParams)
 	if res.Error != nil {
 		s.Failure(w, res.Error, res.StatusCode)
 		return
 	}
 
-	response := EmailVerificationResponse{Message: "email successfully verified"}
-	s.Success(w, response)
+	s.Success(w, MessageResponse{Message: "password reset successfully"})
 }
 
-func emailVerificationBody(code string, validFor time.Duration) string {
+func resetPasswordEmailBody(code string, validFor time.Duration) string {
 	sb := &utils.StringBuilder{}
 	sb.WriteLine("<p>Dear User,</p>")
-	sb.WriteLine("<p>Please use the code to verify your email:</p>")
-	sb.WriteLine(fmt.Sprintf("<p><strong>Code:</strong> %s</p>", code))
+	sb.WriteLine("<p>You have requested to reset your password.</p>")
+	sb.WriteLine("<p>Please use the code below to reset your password:</p>")
+	sb.WriteLine(fmt.Sprintf("<p><strong>Reset Code:</strong> %s</p>", code))
 	sb.WriteLine(fmt.Sprintf("<p><em>This code is valid for the next %s.</em></p>", validFor))
 	sb.WriteLine("<p>If you did not request this, please ignore this email.</p>")
 	return sb.String()

@@ -12,6 +12,7 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	mockRepo "github.com/sirjager/goth/repository/mock"
+	mockTask "github.com/sirjager/goth/worker/mock"
 )
 
 func TestHealth(t *testing.T) {
@@ -51,7 +52,8 @@ func TestHealth(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			repo := mockRepo.NewMockRepository(ctrl)
+			repo := mockRepo.NewMockRepo(ctrl)
+			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
 			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
 			recoder := httptest.NewRecorder()

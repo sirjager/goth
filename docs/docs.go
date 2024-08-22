@@ -41,6 +41,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/delete": {
+            "get": {
+                "description": "Delete User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code if already have",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/auth/refresh": {
+            "get": {
+                "description": "Refreshes Access Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns User in body",
+                        "name": "user",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "If true, returns AccessToken and SessionID in body",
+                        "name": "cookies",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "RefreshTokenResponse",
+                        "schema": {
+                            "$ref": "#/definitions/RefreshTokenResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/reset": {
+            "post": {
+                "description": "Reset Password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset",
+                "parameters": [
+                    {
+                        "description": "ResetPasswordParams",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ResetPasswordParams"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/signin": {
             "get": {
                 "security": [
@@ -160,7 +248,7 @@ const docTemplate = `{
             }
         },
         "/auth/verify": {
-            "post": {
+            "get": {
                 "description": "Email Verification",
                 "consumes": [
                     "application/json"
@@ -189,9 +277,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "EmailVerificationResponse",
+                        "description": "Success message",
                         "schema": {
-                            "$ref": "#/definitions/EmailVerificationResponse"
+                            "type": "string"
                         }
                     }
                 }
@@ -214,7 +302,7 @@ const docTemplate = `{
                             "github"
                         ],
                         "type": "string",
-                        "description": "OAuth provider name",
+                        "description": "OAuth provider name [google,github]",
                         "name": "provider",
                         "in": "path",
                         "required": true
@@ -400,6 +488,37 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uptime": {
+                    "type": "string"
+                }
+            }
+        },
+        "RefreshTokenResponse": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "sessionID": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "ResetPasswordParams": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "newPassword": {
                     "type": "string"
                 }
             }

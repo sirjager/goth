@@ -18,9 +18,23 @@ const (
 	ValidationEnable  Validation = true
 )
 
-func (a *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
-	for _, cookie := range cookies {
-		http.SetCookie(w, cookie)
+type MessageResponse struct {
+	Message string `json:"message,omitempty"`
+} // @name ErrorResponse
+
+type ErrorResponse struct {
+	Error string `json:"error,omitempty"`
+} // @name ErrorResponse
+
+func (a *Server) Success(w http.ResponseWriter, response any, statusCode ...int) {
+	status := 200
+	if len(statusCode) == 1 {
+		status = statusCode[0]
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		a.Failure(w, err)
 	}
 }
 
@@ -29,7 +43,18 @@ func (a *Server) Failure(w http.ResponseWriter, err error, statusCode ...int) {
 	if len(statusCode) == 1 {
 		status = statusCode[0]
 	}
-	http.Error(w, err.Error(), status)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	response := ErrorResponse{Error: err.Error()}
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		a.Failure(w, err)
+	}
+}
+
+func (a *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
+	for _, cookie := range cookies {
+		http.SetCookie(w, cookie)
+	}
 }
 
 func (a *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...int) {
@@ -44,18 +69,6 @@ func (a *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...
 	w.Header().Add("Content-Type", "text/plain")
 	w.WriteHeader(status)
 	if _, err := w.Write([]byte(_message)); err != nil {
-		a.Failure(w, err)
-	}
-}
-
-func (a *Server) Success(w http.ResponseWriter, response any, statusCode ...int) {
-	status := 200
-	if len(statusCode) == 1 {
-		status = statusCode[0]
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
 		a.Failure(w, err)
 	}
 }
@@ -102,7 +115,7 @@ func (a *Server) ParseAndValidate(r *http.Request, v interface{}, validation ...
 func fetchUserFromRepository(
 	c context.Context,
 	identity string,
-	repo repository.Repository,
+	repo repository.Repo,
 ) users.UserReadResult {
 	if email, emailErr := vo.NewEmail(identity); emailErr == nil {
 		return repo.UserGetByEmail(c, email)

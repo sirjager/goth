@@ -6,9 +6,12 @@ import (
 	"strings"
 
 	"github.com/sirjager/gopkg/utils"
+	"golang.org/x/net/context"
 
 	"github.com/sirjager/goth/entity"
 	mw "github.com/sirjager/goth/middlewares"
+	"github.com/sirjager/goth/payload"
+	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/repository/users"
 	"github.com/sirjager/goth/vo"
 )
@@ -49,28 +52,14 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var res users.UserReadResult
+	// get user from repository result
 
-	// If identity is email, get user using email, else get using username
-	if strings.Contains(identity, "@") {
-		email, errEmail := vo.NewEmail(identity)
-		if errEmail != nil {
-			_, _ = password.HashPassword()
-			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
-			return
-		}
-		res = s.repo.UserGetByEmail(ctx, email)
-	} else {
-		username, errUsername := vo.NewUsername(identity)
-		if errUsername != nil {
-			_, _ = password.HashPassword()
-			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
-			return
-		}
-		res = s.repo.UserGetByUsername(ctx, username)
-	}
-
+	res := _getUser(r.Context(), identity, s.repo)
 	if res.Error != nil {
+		if res.StatusCode == http.StatusBadRequest {
+			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
+			return
+		}
 		if res.StatusCode == http.StatusNotFound {
 			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
 			return
@@ -90,34 +79,32 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// NOTE: Create Session And Tokens
 	sessionID := utils.XIDNew().String()
-	accessData := mw.NewAccessPayload(res.User.ID, sessionID)
-	accessTokenDur := s.config.AuthAccessTokenExpire
-	accessToken, accessTokenPayload, err := s.tokens.CreateToken(accessData, accessTokenDur)
+
+	// create and save access token payload
+	accessData := payload.NewAccessPayload(res.User, sessionID)
+	accessExpiry := s.config.AuthAccessTokenExpire
+	accessToken, accessPayload, err := s.toknb.CreateToken(accessData, accessExpiry)
 	if err != nil {
 		s.Failure(w, err)
 		return
 	}
+	accessKey := payload.SessionAccessKey(res.User.ID.Value().String(), sessionID)
+	if err = s.cache.Set(ctx, accessKey, accessPayload, accessExpiry); err != nil {
+		s.Failure(w, err)
+		return
+	}
 
-	refreshData := mw.NewRefreshPayload(res.User.ID, sessionID)
-	refreshTokenDur := s.config.AuthRefreshTokenExpire
-	refreshToken, refreshTokenPayload, err := s.tokens.CreateToken(refreshData, refreshTokenDur)
+	// create and save refresh token payload
+	refreshData := payload.NewRefreshPayload(res.User, sessionID)
+	refreshExpiry := s.config.AuthRefreshTokenExpire
+	refreshToken, refreshPayload, err := s.toknb.CreateToken(refreshData, refreshExpiry)
 	if err != nil {
 		s.Failure(w, err)
 		return
 	}
-
-	// INFO: saving access token to cache
-	accessKey := mw.TokenKey(res.User.ID.Value().String(), sessionID, mw.TokenTypeAccess)
-	if err = s.cache.Set(ctx, accessKey, accessTokenPayload, accessTokenDur); err != nil {
-		s.Failure(w, err)
-		return
-	}
-
-	// INFO: saving refresh token to cache
-	refreshKey := mw.TokenKey(res.User.ID.Value().String(), sessionID, mw.TokenTypeRefresh)
-	if err = s.cache.Set(ctx, refreshKey, refreshTokenPayload, refreshTokenDur); err != nil {
+	refreshKey := payload.SessionRefreshKey(res.User.ID.Value().String(), sessionID)
+	if err = s.cache.Set(ctx, refreshKey, refreshPayload, refreshExpiry); err != nil {
 		s.Failure(w, err)
 		return
 	}
@@ -126,17 +113,17 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	s.SetCookies(w,
 		&http.Cookie{
 			Name: mw.CookieSessionID, Value: sessionID,
-			Path: "/", Expires: accessTokenPayload.ExpiresAt,
+			Path: "/", Expires: accessPayload.ExpiresAt,
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
 			Name: mw.CookieAccessToken, Value: accessToken,
-			Path: "/", Expires: accessTokenPayload.ExpiresAt,
+			Path: "/", Expires: accessPayload.ExpiresAt,
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 		&http.Cookie{
 			Name: mw.CookieRefreshToken, Value: refreshToken,
-			Path: "/", Expires: refreshTokenPayload.ExpiresAt,
+			Path: "/", Expires: refreshPayload.ExpiresAt,
 			HttpOnly: true, SameSite: http.SameSiteDefaultMode, Secure: false,
 		},
 	)
@@ -161,4 +148,19 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.Success(w, response, res.StatusCode)
+}
+
+func _getUser(ctx context.Context, id string, repo repository.Repo) users.UserReadResult {
+	if strings.Contains(id, "@") {
+		email, errEmail := vo.NewEmail(id)
+		if errEmail != nil {
+			return users.UserReadResult{StatusCode: http.StatusBadRequest, Error: errEmail}
+		}
+		return repo.UserGetByEmail(ctx, email)
+	}
+	username, errUsername := vo.NewUsername(id)
+	if errUsername != nil {
+		return users.UserReadResult{StatusCode: http.StatusBadRequest, Error: errUsername}
+	}
+	return repo.UserGetByUsername(ctx, username)
 }
