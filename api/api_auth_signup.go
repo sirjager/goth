@@ -2,14 +2,15 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/sirjager/goth/entity"
 	"github.com/sirjager/goth/vo"
 )
 
 type SignUpRequestParams struct {
-	Username string `json:"username,omitempty" validate:"required"`
-	Email    string `json:"email,omitempty"    validate:"required"`
+	Username string `json:"username,omitempty" validate:""`
+	Email    string `json:"email,omitempty"    validate:"required,gte=3"`
 	Password string `json:"password,omitempty" validate:"required"`
 } // @name SignUpRequestParams
 
@@ -31,7 +32,6 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var username *vo.Username
-
 	email, err := vo.NewEmail(params.Email)
 	if err != nil {
 		a.Failure(w, err, http.StatusBadRequest)
@@ -42,6 +42,11 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 		a.Failure(w, err, http.StatusBadRequest)
 		return
 	}
+
+	if params.Username == "" {
+		params.Username = strings.Split(params.Email, "@")[0]
+	}
+
 	username, err = vo.NewUsername(params.Username)
 	if err != nil {
 		a.Failure(w, err, http.StatusBadRequest)

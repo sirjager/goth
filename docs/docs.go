@@ -461,14 +461,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "EmailVerificationResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
         "HealthResponse": {
             "type": "object",
             "properties": {
