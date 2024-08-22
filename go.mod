@@ -22,6 +22,7 @@ require (
 	github.com/swaggo/swag v1.16.3
 	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.23.0
+	golang.org/x/net v0.25.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.65.0
 	gopkg.in/boj/redistore.v1 v1.0.0-20160128113310-fc113767cd6b
@@ -94,7 +95,6 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
-	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
