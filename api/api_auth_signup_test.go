@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/sirjager/goth/entity"
+	mw "github.com/sirjager/goth/middlewares"
 	repoerrors "github.com/sirjager/goth/repository/errors"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	"github.com/sirjager/goth/repository/users"
@@ -33,7 +35,6 @@ func TestSignup(t *testing.T) {
 		{
 			name: "OK",
 			body: SignUpRequestParams{
-				Username: user.User.Username,
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
@@ -68,39 +69,9 @@ func TestSignup(t *testing.T) {
 			},
 		},
 		{
-			name: "InvalidParams",
-			body: SignUpRequestParams{
-				Email:    user.User.Email,
-				Password: password.Value(),
-			},
-			stubs: func(repo *mockRepo.MockRepo) {
-				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
-				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
-			},
-			check: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
-			},
-		},
-		{
 			name: "InvalidEmail",
 			body: SignUpRequestParams{
 				Email:    "galat-email-daal-deta-hu-kya-he-pata-$chalega@gmail.com",
-				Username: user.User.Username,
-				Password: password.Value(),
-			},
-			stubs: func(repo *mockRepo.MockRepo) {
-				repo.EXPECT().UserGetMaster(gomock.Any()).Times(0)
-				repo.EXPECT().UserCreate(gomock.Any(), gomock.Any()).Times(0)
-			},
-			check: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
-			},
-		},
-		{
-			name: "InvalidUsername",
-			body: SignUpRequestParams{
-				Email:    user.User.Email,
-				Username: "cool-username.me",
 				Password: password.Value(),
 			},
 			stubs: func(repo *mockRepo.MockRepo) {
@@ -115,7 +86,6 @@ func TestSignup(t *testing.T) {
 			name: "InvalidPassword",
 			body: SignUpRequestParams{
 				Email:    user.User.Email,
-				Username: user.User.Username,
 				Password: "missing-1-symbol-and-uppercase",
 			},
 			stubs: func(repo *mockRepo.MockRepo) {
@@ -130,7 +100,6 @@ func TestSignup(t *testing.T) {
 			name: "AlreadyExists",
 			body: SignUpRequestParams{
 				Email:    user.User.Email,
-				Username: user.User.Username,
 				Password: password.Value(),
 			},
 			stubs: func(repo *mockRepo.MockRepo) {
@@ -155,7 +124,6 @@ func TestSignup(t *testing.T) {
 			name: "InternalError",
 			body: SignUpRequestParams{
 				Email:    user.User.Email,
-				Username: user.User.Username,
 				Password: password.Value(),
 			},
 			stubs: func(repo *mockRepo.MockRepo) {
@@ -187,7 +155,9 @@ func TestSignup(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
+			adapters := mw.LoadAdapters(testConfig, repo, testTokens, testCache, testLogr, testMail, testTasks)
+			server := NewServer(adapters)
+
 			recoder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodPost, "/auth/signup", bytes.NewReader(data))
@@ -204,9 +174,11 @@ func randomUser(t *testing.T) (UserResponse, *vo.Password, *vo.HashedPassword) {
 	require.NoError(t, err)
 	password, err := vo.NewPassword(utils.RandomPassword() + "A")
 	require.NoError(t, err)
-	username, err := vo.NewUsername(utils.RandomUserName())
-	require.NoError(t, err)
+
 	email, err := vo.NewEmail(utils.RandomEmail())
+	require.NoError(t, err)
+
+	username, err := vo.NewUsername(strings.Split(email.Value(), "@")[0])
 	require.NoError(t, err)
 
 	hashedPassword, err := password.HashPassword()

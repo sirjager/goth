@@ -84,12 +84,6 @@ const docTemplate = `{
                         "description": "If true, returns User in body",
                         "name": "user",
                         "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "If true, returns AccessToken and SessionID in body",
-                        "name": "cookies",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -152,12 +146,6 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "If true, returns User in body",
                         "name": "user",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "If true, returns AccessToken, RefreshToken and SessionID in body",
-                        "name": "cookies",
                         "in": "query"
                     }
                 ],
@@ -518,16 +506,7 @@ const docTemplate = `{
         "SignInResponse": {
             "type": "object",
             "properties": {
-                "accessToken": {
-                    "type": "string"
-                },
                 "message": {
-                    "type": "string"
-                },
-                "refreshToken": {
-                    "type": "string"
-                },
-                "sessionID": {
                     "type": "string"
                 },
                 "user": {
@@ -547,9 +526,6 @@ const docTemplate = `{
                     "minLength": 3
                 },
                 "password": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }

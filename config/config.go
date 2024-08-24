@@ -47,27 +47,27 @@ type Config struct {
 	// AuthSecureCookies indicates whether secure cookies should be used for authentication.
 	AuthSecureCookies bool `mapstructure:"AUTH_SECURE_COOKIES"          validate:"boolean"`
 	// AuthOAuthTokensExpire defines the expiration duration for OAuth tokens.
-	AuthOAuthTokensExpire time.Duration `mapstructure:"AUTH_OAUTH_TOKEN_EXPIRE"      validate:"required,gte=30s"`
+	AuthOAuthTokensExpire time.Duration `mapstructure:"AUTH_OAUTH_TOKEN_EXPIRE"      validate:"required,gte=5s"`
 	// AuthAccessTokenExpire defines the expiration duration for access tokens.
-	AuthAccessTokenExpire time.Duration `mapstructure:"AUTH_ACCESS_TOKEN_EXPIRE"     validate:"required,gte=30s"`
+	AuthAccessTokenExpire time.Duration `mapstructure:"AUTH_ACCESS_TOKEN_EXPIRE"     validate:"required,gte=5s"`
 	// AuthRefreshTokenExpire defines the expiration duration for refresh tokens.
-	AuthRefreshTokenExpire time.Duration `mapstructure:"AUTH_REFRESH_TOKEN_EXPIRE"    validate:"required,gte=30s"`
+	AuthRefreshTokenExpire time.Duration `mapstructure:"AUTH_REFRESH_TOKEN_EXPIRE"    validate:"required,gte=5s"`
 	// AuthEmailVerifyCooldown specifies the cooldown period between email verification requests.
-	AuthEmailVerifyCooldown time.Duration `mapstructure:"AUTH_EMAIL_VERIFY_COOLDOWN"   validate:"required,gte=30s"`
+	AuthEmailVerifyCooldown time.Duration `mapstructure:"AUTH_EMAIL_VERIFY_COOLDOWN"   validate:"required,gte=5s"`
 	// AuthEmailVerifyExpire defines the expiration duration for email verification links.
-	AuthEmailVerifyExpire time.Duration `mapstructure:"AUTH_EMAIL_VERIFY_EXPIRE"     validate:"required,gte=30s"`
+	AuthEmailVerifyExpire time.Duration `mapstructure:"AUTH_EMAIL_VERIFY_EXPIRE"     validate:"required,gte=5s"`
 	// AuthUserDeleteCooldown specifies the cooldown period between user deletion requests.
-	AuthUserDeleteCooldown time.Duration `mapstructure:"AUTH_USER_DELETE_COOLDOWN"    validate:"required,gte=30s"`
+	AuthUserDeleteCooldown time.Duration `mapstructure:"AUTH_USER_DELETE_COOLDOWN"    validate:"required,gte=5s"`
 	// AuthUserDeleteExpire defines the expiration duration for user deletion requests.
-	AuthUserDeleteExpire time.Duration `mapstructure:"AUTH_USER_DELETE_EXPIRE"      validate:"required,gte=30s"`
+	AuthUserDeleteExpire time.Duration `mapstructure:"AUTH_USER_DELETE_EXPIRE"      validate:"required,gte=5s"`
 	// AuthEmailChangeCooldown specifies the cooldown period between email change requests.
-	AuthEmailChangeCooldown time.Duration `mapstructure:"AUTH_EMAIL_CHANGE_COOLDOWN"   validate:"required,gte=30s"`
+	AuthEmailChangeCooldown time.Duration `mapstructure:"AUTH_EMAIL_CHANGE_COOLDOWN"   validate:"required,gte=5s"`
 	// AuthEmailChangeExpire defines the expiration duration for email change links.
-	AuthEmailChangeExpire time.Duration `mapstructure:"AUTH_EMAIL_CHANGE_EXPIRE"     validate:"required,gte=30s"`
+	AuthEmailChangeExpire time.Duration `mapstructure:"AUTH_EMAIL_CHANGE_EXPIRE"     validate:"required,gte=5s"`
 	// AuthPasswordResetCooldown specifies the cooldown period between password reset requests.
-	AuthPasswordResetCooldown time.Duration `mapstructure:"AUTH_PASSWORD_RESET_COOLDOWN" validate:"required,gte=30s"`
+	AuthPasswordResetCooldown time.Duration `mapstructure:"AUTH_PASSWORD_RESET_COOLDOWN" validate:"required,gte=5s"`
 	// AuthPasswordResetExpire defines the expiration duration for password reset links.
-	AuthPasswordResetExpire time.Duration `mapstructure:"AUTH_PASSWORD_RESET_EXPIRE"   validate:"required,gte=30s"`
+	AuthPasswordResetExpire time.Duration `mapstructure:"AUTH_PASSWORD_RESET_EXPIRE"   validate:"required,gte=5s"`
 	// AuthGoogleClientID is the client ID for Google OAuth integration.
 	AuthGoogleClientID string `mapstructure:"AUTH_GOOGLE_CLIENT_ID"        validate:"required,gte=50"`
 	// AuthGoogleClientSecret is the client secret for Google OAuth integration.

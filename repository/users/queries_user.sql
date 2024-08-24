@@ -29,7 +29,8 @@ UPDATE "users" SET
   first_name = $2, 
   last_name = $3,
   picture_url = $4,
-  avatar_url = $5
+  avatar_url = $5,
+  username = $6
 WHERE id = @id RETURNING *;
 
 

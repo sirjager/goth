@@ -8,6 +8,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/sirjager/gopkg/cache"
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/gopkg/utils"
 
 	"github.com/sirjager/goth/payload"
@@ -36,7 +37,7 @@ type ResetPasswordParams struct {
 func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 	var param ResetPasswordParams
 	if err := s.ParseAndValidate(r, &param, ValidationDisable); err != nil {
-		s.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -47,26 +48,26 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 
 	email, err := vo.NewEmail(param.Email)
 	if err != nil {
-		s.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
 	res := s.repo.UserGetByEmail(r.Context(), email)
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
-			s.Failure(w, res.Error, res.StatusCode)
+			httpx.Error(w, res.Error, res.StatusCode)
 			return
 		}
 		if hasCode {
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			httpx.Error(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
-		s.Success(w, MessageResponse{Message: checkYourInbox})
+		httpx.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
 	if !res.User.Verified {
-		s.Failure(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
+		httpx.Error(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
 		return
 	}
 
@@ -76,7 +77,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
 	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
 		isAlreadyPending = false
@@ -84,7 +85,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 
 	if !isAlreadyPending {
 		if hasCode {
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			httpx.Error(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
 		mailCode := utils.RandomNumberAsString(6)
@@ -101,7 +102,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 		}
 		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
 		if err != nil {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
 
@@ -109,10 +110,10 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 			asynq.MaxRetry(3), asynq.Group(worker.PriorityUrgent),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
 		); err != nil {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
-		s.Success(w, MessageResponse{Message: checkYourInbox})
+		httpx.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
@@ -122,33 +123,33 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 		if timeDifference < cooldownTime {
 			tryAfter := cooldownTime - timeDifference
 			err = fmt.Errorf("recently requested, please try again after %s", tryAfter)
-			s.Failure(w, err, http.StatusBadRequest)
+			httpx.Error(w, err, http.StatusBadRequest)
 			return
 		}
 		// request is pending but no code provided so we reject with invalid code
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
 	// Here we have pending request and code is also provided, we check and update
 	if !email.IsEqual(pending.Email) {
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 	if param.Code != pending.Code {
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
 	password, passErr := vo.NewPassword(param.NewPassword)
 	if passErr != nil {
-		s.Failure(w, passErr, http.StatusBadRequest)
+		httpx.Error(w, passErr, http.StatusBadRequest)
 		return
 	}
 
 	hashedPassword, hashErr := password.HashPassword()
 	if hashErr != nil {
-		s.Failure(w, hashErr)
+		httpx.Error(w, hashErr)
 		return
 	}
 
@@ -162,11 +163,11 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 
 	res = s.repo.UserUpdatePasswordTx(r.Context(), updateParams)
 	if res.Error != nil {
-		s.Failure(w, res.Error, res.StatusCode)
+		httpx.Error(w, res.Error, res.StatusCode)
 		return
 	}
 
-	s.Success(w, MessageResponse{Message: "password reset successfully"})
+	httpx.Success(w, MessageResponse{Message: "password reset successfully"})
 }
 
 func resetPasswordEmailBody(code string, validFor time.Duration) string {

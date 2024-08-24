@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/goth/entity"
 	"github.com/sirjager/goth/vo"
 )
 
 type SignUpRequestParams struct {
-	Username string `json:"username,omitempty"`
 	Email    string `json:"email,omitempty"    validate:"required,gte=3"`
 	Password string `json:"password,omitempty" validate:"required"`
 } // @name SignUpRequestParams
@@ -27,35 +27,31 @@ type SignUpRequestParams struct {
 func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	var params SignUpRequestParams
 	if err := a.ParseAndValidate(r, &params); err != nil {
-		a.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
 	var username *vo.Username
 	email, err := vo.NewEmail(params.Email)
 	if err != nil {
-		a.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 	password, err := vo.NewPassword(params.Password)
 	if err != nil {
-		a.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
-	if params.Username == "" {
-		params.Username = strings.Split(params.Email, "@")[0]
-	}
-
-	username, err = vo.NewUsername(params.Username)
+	username, err = vo.NewUsername(strings.Split(params.Email, "@")[0])
 	if err != nil {
-		a.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
 	hashedPassword, err := password.HashPassword()
 	if err != nil {
-		a.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 
@@ -70,7 +66,7 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	// If master user does not exists, we make newUser a Master User.
 	exists, existsErr := masterUserExists(r.Context(), a.repo)
 	if existsErr != nil {
-		a.Failure(w, existsErr)
+		httpx.Error(w, existsErr)
 		return
 	}
 	if !exists {
@@ -79,10 +75,10 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 
 	result := a.repo.UserCreate(r.Context(), newUser)
 	if result.Error != nil {
-		a.Failure(w, result.Error, result.StatusCode)
+		httpx.Error(w, result.Error, result.StatusCode)
 		return
 	}
 
 	response := UserResponse{result.User.Profile()}
-	a.Success(w, response, result.StatusCode)
+	httpx.Success(w, response, result.StatusCode)
 }

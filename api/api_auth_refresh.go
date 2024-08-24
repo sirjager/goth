@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/gopkg/utils"
 
 	"github.com/sirjager/goth/entity"
@@ -26,7 +27,6 @@ type RefreshTokenResponse struct {
 //	@Produce		json
 //	@Router			/auth/refresh [get]
 //	@Param			user	query		bool					false	"If true, returns User in body"
-//	@Param			cookies	query		bool					false	"If true, returns AccessToken and SessionID in body"
 //	@Success		200		{object}	RefreshTokenResponse	"RefreshTokenResponse"
 func (s *Server) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
@@ -35,13 +35,13 @@ func (s *Server) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	accessTokenDur := s.config.AuthAccessTokenExpire
 	accessToken, accessTokenPayload, err := s.toknb.CreateToken(accessData, accessTokenDur)
 	if err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 
 	accessKey := payload.SessionAccessKey(user.ID.Value().String(), sessionID)
 	if err = s.cache.Set(r.Context(), accessKey, accessTokenPayload, accessTokenDur); err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 
@@ -61,20 +61,11 @@ func (s *Server) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	userParam := r.URL.Query().Get("user")
 	getUser := userParam == "true" || (r.URL.Query().Has("user") && userParam == "")
 
-	cookiesParams := r.URL.Query().Get("cookies")
-	getCookies := cookiesParams == "true" ||
-		(r.URL.Query().Has("cookies") && cookiesParams == "")
-
 	response := RefreshTokenResponse{Message: "access tokens refreshed"}
 
 	if getUser {
 		response.User = user.Profile()
 	}
 
-	if getCookies {
-		response.SessionID = sessionID
-		response.AccessToken = accessToken
-	}
-
-	s.Success(w, response)
+	httpx.Success(w, response)
 }

@@ -2,6 +2,8 @@ package mw
 
 import (
 	"net/http"
+
+	"github.com/sirjager/gopkg/httpx"
 )
 
 // RequiresVerified check if authenticated user if verified or not. if not it rejects the requsets
@@ -11,7 +13,7 @@ func RequiresVerified() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user := UserOrPanic(r)
 			if !user.Verified {
-				http.Error(w, emailNotVerified, http.StatusForbidden)
+				httpx.Error(w, ErrEmailNotVerified, http.StatusForbidden)
 				return
 			}
 			next.ServeHTTP(w, r)

@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/markbates/goth/gothic"
 
+	"github.com/sirjager/gopkg/httpx"
 	mw "github.com/sirjager/goth/middlewares"
 )
 
@@ -29,9 +30,9 @@ func (a *Server) OAuthProvider(w http.ResponseWriter, r *http.Request) {
 	refererURL = parsedURL.Scheme + "://" + parsedURL.Host
 
 	provider := chi.URLParam(r, "provider")
-	if user, authenticated := mw.IsAuthenticated(r, a.repo, a.toknb, a.cache); authenticated {
+	if user, authenticated := mw.IsAuthenticated(r, a.adapters); authenticated {
 		response := UserResponse{User: user.Profile()}
-		a.Success(w, response)
+		httpx.Success(w, response)
 		return
 	}
 

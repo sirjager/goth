@@ -19,6 +19,7 @@ import (
 	"github.com/sirjager/goth/api"
 	"github.com/sirjager/goth/config"
 	"github.com/sirjager/goth/logger"
+	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/oauth"
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/worker"
@@ -106,9 +107,11 @@ func main() {
 	tasks := worker.NewTaskDistributor(logr, config.RedisOptions)
 	defer tasks.Shutdown()
 
-	worker.RunTaskProcessor(ctx, wg, logr, repo, mail, cache, tokens, config, config.RedisOptions)
+	adapters := mw.LoadAdapters(config, repo, tokens, cache, logr, mail, tasks)
 
-	server := api.NewServer(repo, logr, config, cache, tokens, tasks)
+	worker.RunTaskProcessor(ctx, wg, logr, repo, mail, cache, tokens, config)
+
+	server := api.NewServer(adapters)
 
 	server.StartServer(address, ctx, wg)
 

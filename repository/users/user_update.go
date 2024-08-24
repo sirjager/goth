@@ -16,6 +16,7 @@ func (r *repo) UserUpdate(ctx context.Context, u *entity.User) UserReadResult {
 			ID:         u.ID.Value(),
 			FullName:   u.FullName,
 			FirstName:  u.FirstName,
+			Username:   u.Username.Value(),
 			LastName:   u.LastName,
 			PictureUrl: u.PictureURL,
 			AvatarUrl:  u.AvatarURL,

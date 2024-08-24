@@ -37,6 +37,7 @@ func (o *OAuth) InitializeRedisStore(address, secretKey string) (err error) {
 	}
 	store.Options.HttpOnly = true
 	store.Options.Secure = o.config.AuthSecureCookies
+	store.Options.MaxAge = int(o.config.AuthOAuthTokensExpire.Seconds())
 	store.SetMaxAge(int(o.config.AuthOAuthTokensExpire.Seconds()))
 
 	o.store = store

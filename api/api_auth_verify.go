@@ -8,6 +8,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/sirjager/gopkg/cache"
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/gopkg/utils"
 
 	"github.com/sirjager/goth/payload"
@@ -42,26 +43,26 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	email, err := vo.NewEmail(emailQueryParam)
 	if err != nil {
 		s.logr.Error().Err(err).Msg("invalid email")
-		s.Failure(w, err, http.StatusBadRequest)
+		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
 	res := s.repo.UserGetByEmail(r.Context(), email)
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
-			s.Failure(w, res.Error, res.StatusCode)
+			httpx.Error(w, res.Error, res.StatusCode)
 			return
 		}
 		if hasCode {
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			httpx.Error(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
-		s.Success(w, MessageResponse{Message: checkYourInbox})
+		httpx.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
 	if res.User.Verified {
-		s.Success(w, MessageResponse{Message: "email already verified"})
+		httpx.Success(w, MessageResponse{Message: "email already verified"})
 		return
 	}
 
@@ -71,7 +72,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
 	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
 		isAlreadyPending = false
@@ -79,7 +80,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	if !isAlreadyPending {
 		if hasCode {
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			httpx.Error(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
 		mailCode := utils.RandomNumberAsString(6)
@@ -96,7 +97,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		}
 		token, _, tokenErr := s.toknb.CreateToken(payload, codeExpiration)
 		if tokenErr != nil {
-			s.Failure(w, tokenErr)
+			httpx.Error(w, tokenErr)
 			return
 		}
 
@@ -104,10 +105,10 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 			asynq.MaxRetry(3), asynq.Group(worker.PriorityLow),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
 		); err != nil {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
-		s.Success(w, MessageResponse{Message: checkYourInbox})
+		httpx.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
@@ -117,33 +118,33 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		if timeDifference < cooldownTime {
 			tryAfter := cooldownTime - timeDifference
 			err = fmt.Errorf("recently requested, please try again after %s", tryAfter)
-			s.Failure(w, err, http.StatusBadRequest)
+			httpx.Error(w, err, http.StatusBadRequest)
 			return
 		}
 		// request is pending but no code provided so we reject with invalid code
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
 	// Here we have pending request and code is also provided, we check and update
 	if !email.IsEqual(pending.Email) {
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 	if codeQueryParam != pending.Code {
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
 	// now update it to users repository
 	res = s.repo.UserUpdateVerified(r.Context(), res.User.ID, true)
 	if res.Error != nil {
-		s.Failure(w, res.Error, res.StatusCode)
+		httpx.Error(w, res.Error, res.StatusCode)
 		return
 	}
 
 	response := EmailVerificationResponse{Message: "email successfully verified"}
-	s.Success(w, response)
+	httpx.Success(w, response)
 }
 
 func emailVerificationBody(code string, validFor time.Duration) string {

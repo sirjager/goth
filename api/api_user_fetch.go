@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/goth/entity"
 	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository/users"
@@ -40,7 +41,7 @@ func (a *Server) UserGet(w http.ResponseWriter, r *http.Request) {
 
 	// resolved master role request
 	response := UserResponse{result.User.Profile()}
-	a.Success(w, response, result.StatusCode)
+	httpx.Success(w, response, result.StatusCode)
 }
 
 type UsersResponse struct {
@@ -66,5 +67,5 @@ func (a *Server) UsersGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := UsersResponse{EntitiesToProfiles(result.Users)}
-	a.Success(w, response, result.StatusCode)
+	httpx.Success(w, response, result.StatusCode)
 }

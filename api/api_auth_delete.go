@@ -8,6 +8,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/sirjager/gopkg/cache"
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/gopkg/utils"
 
 	mw "github.com/sirjager/goth/middlewares"
@@ -35,7 +36,7 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 	hasCode := len(codeQueryParam) != 0
 
 	if !user.Verified {
-		s.Failure(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
+		httpx.Error(w, errors.New("can not proceed without verified email"), http.StatusForbidden)
 		return
 	}
 
@@ -45,7 +46,7 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 	actionKey := payload.EmailKey(user.Email.Value(), emailAction)
 	if err := s.cache.Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
 		isAlreadyPending = false
@@ -53,7 +54,7 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if !isAlreadyPending {
 		if hasCode {
-			s.Failure(w, errInvalidCode, http.StatusForbidden)
+			httpx.Error(w, errInvalidCode, http.StatusForbidden)
 			return
 		}
 		mailCode := utils.RandomNumberAsString(32)
@@ -70,7 +71,7 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
 		if err != nil {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
 
@@ -78,10 +79,10 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 			asynq.MaxRetry(2), asynq.Group(worker.PriorityLazy),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(3000, 6000))), // 1 to 5 seconds
 		); err != nil {
-			s.Failure(w, err)
+			httpx.Error(w, err)
 			return
 		}
-		s.Success(w, MessageResponse{Message: checkYourInbox})
+		httpx.Success(w, MessageResponse{Message: checkYourInbox})
 		return
 	}
 
@@ -91,17 +92,17 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 		if timeDifference < cooldownTime {
 			tryAfter := cooldownTime - timeDifference
 			err := fmt.Errorf("recently requested, please try again after %s", tryAfter)
-			s.Failure(w, err, http.StatusBadRequest)
+			httpx.Error(w, err, http.StatusBadRequest)
 			return
 		}
 		// request is pending but no code provided so we reject with invalid code
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
 	// Here we have pending request and code is also provided, we check and update
 	if !user.Email.IsEqual(pending.Email) {
-		s.Failure(w, errInvalidCode, http.StatusForbidden)
+		httpx.Error(w, errInvalidCode, http.StatusForbidden)
 		return
 	}
 
@@ -113,15 +114,15 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 		res := s.repo.UserDeleteTx(r.Context(), deleteParams)
 		if res.Error != nil {
-			s.Failure(w, res.Error, res.StatusCode)
+			httpx.Error(w, res.Error, res.StatusCode)
 			return
 		}
 
-		s.Success(w, MessageResponse{Message: "user successfully deleted"})
+		httpx.Success(w, MessageResponse{Message: "user successfully deleted"})
 		return
 	}
 
-	s.Failure(w, errInvalidCode, http.StatusForbidden)
+	httpx.Error(w, errInvalidCode, http.StatusForbidden)
 }
 
 func userDeleteEmailBody(code, email string, validFor time.Duration) string {

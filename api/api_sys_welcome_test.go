@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	mw "github.com/sirjager/goth/middlewares"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	mockTask "github.com/sirjager/goth/worker/mock"
 )
@@ -48,7 +49,8 @@ func TestWelcome(t *testing.T) {
 			repo := mockRepo.NewMockRepo(ctrl)
 			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
-			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
+			adapters := mw.LoadAdapters(testConfig, repo, testTokens, testCache, testLogr, testMail, testTasks)
+			server := NewServer(adapters)
 			recoder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodGet, "/", nil)

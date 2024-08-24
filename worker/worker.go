@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/sirjager/gopkg/cache"
@@ -24,8 +23,8 @@ func RunTaskProcessor(
 	cache cache.Cache,
 	tokens tokens.TokenBuilder,
 	config *config.Config,
-	redisOptions *redis.Options,
 ) {
+	redisOptions := config.RedisOptions
 	opts := asynq.RedisClientOpt{
 		DB:        redisOptions.DB,
 		Addr:      redisOptions.Addr,

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sirjager/goth/config"
+	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/worker"
 )
@@ -26,25 +27,19 @@ type Server struct {
 	validate *validator.Validate
 	config   *config.Config
 	tasks    worker.TaskDistributor
+	adapters *mw.Adapters
 }
 
-func NewServer(
-	repo repository.Repo,
-	logr zerolog.Logger,
-	config *config.Config,
-	cache cache.Cache,
-	toknb tokens.TokenBuilder,
-	tasks worker.TaskDistributor,
-) *Server {
-	validate := validator.New(validator.WithRequiredStructEnabled())
+func NewServer(a *mw.Adapters) *Server {
 	server := &Server{
-		logr:     logr,
-		config:   config,
-		repo:     repo,
-		validate: validate,
-		toknb:    toknb,
-		cache:    cache,
-		tasks:    tasks,
+		logr:     a.Logr,
+		config:   a.Config,
+		repo:     a.Repo,
+		validate: a.Validate,
+		toknb:    a.Toknb,
+		cache:    a.Cache,
+		tasks:    a.Tasks,
+		adapters: a,
 	}
 	server.MountHandlers()
 	return server

@@ -87,6 +87,9 @@ func (r *repo) _userReadCommon(call func() (sqlc.User, error)) (res UserReadResu
 			res.Error = repoerrors.ErrUserNotFound
 			return
 		}
+		if isUniqueViolation(err) {
+			res.StatusCode = http.StatusConflict
+		}
 		return
 	}
 	res.StatusCode = http.StatusOK

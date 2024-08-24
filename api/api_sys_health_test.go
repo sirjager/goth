@@ -11,6 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
+	mw "github.com/sirjager/goth/middlewares"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	mockTask "github.com/sirjager/goth/worker/mock"
 )
@@ -55,7 +56,9 @@ func TestHealth(t *testing.T) {
 			repo := mockRepo.NewMockRepo(ctrl)
 			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
-			server := NewServer(repo, testLogr, testConfig, testCache, testTokens, testTasks)
+			adapters := mw.LoadAdapters(testConfig, repo, testTokens, testCache, testLogr, testMail, testTasks)
+			server := NewServer(adapters)
+
 			recoder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodGet, "/health", nil)

@@ -8,6 +8,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 
+	"github.com/sirjager/gopkg/httpx"
 	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/vo"
@@ -45,7 +46,7 @@ func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	if result.Error != nil {
 		// if its not, user already exits error, return it
 		if result.StatusCode != http.StatusConflict {
-			a.Failure(w, result.Error, result.StatusCode)
+			httpx.Error(w, result.Error, result.StatusCode)
 			return
 		}
 		// if its user already exits error, get user and return it
@@ -53,7 +54,7 @@ func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if result.Error != nil {
-		a.Failure(w, result.Error, result.StatusCode)
+		httpx.Error(w, result.Error, result.StatusCode)
 		return
 	}
 

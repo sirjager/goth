@@ -1,11 +1,12 @@
 package mw
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/sirjager/gopkg/utils"
 
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/goth/entity"
 )
 
@@ -29,6 +30,38 @@ const (
 	ContextKeyAccessPayload contextType = "ctx_access_payload"
 )
 
+// RequiresAccessToken authenticates the request and adds the user to the context
+func RequiresAccessToken(adapters *Adapters) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			user, status, err := getAuthenticatedUser(r, adapters, CookieAccessToken)
+			if err != nil {
+				httpx.Error(w, err, status)
+				return
+			}
+			ctx = context.WithValue(ctx, ContextKeyUser, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RequiresRefreshToken authenticates the request and adds the user to the context
+func RequiresRefreshToken(adapters *Adapters) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			user, status, err := getAuthenticatedUser(r, adapters, CookieRefreshToken)
+			if err != nil {
+				httpx.Error(w, err, status)
+				return
+			}
+			ctx = context.WithValue(ctx, ContextKeyUser, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // UserOrPanic assert that the user is authenticated, set by RequiresAuth middleware
 func UserOrPanic(r *http.Request) *entity.User {
 	user, ok := r.Context().Value(ContextKeyUser).(*entity.User)
@@ -41,8 +74,18 @@ func UserOrPanic(r *http.Request) *entity.User {
 // IsCurrentUserIdentity returns if identity params matches authorized user identity
 // It matches email,user_id, "me" with /{identity} params.
 func IsCurrentUserIdentity(r *http.Request) bool {
-	user := UserOrPanic(r)
-	identity := chi.URLParam(r, "identity")
+	user := UserOrPanic(r)                  // authenticated user
+	identity := chi.URLParam(r, "identity") //  /some-protected-path/<identity>
 	currentUserIdentities := []string{"me", user.Email.Value(), user.ID.Value().String()}
-	return utils.ValueExist(identity, currentUserIdentities)
+	return valueExist(identity, currentUserIdentities)
+}
+
+// Generic function to check if a value exists in a slice
+func valueExist[T comparable](find T, in []T) bool {
+	for _, v := range in {
+		if v == find {
+			return true
+		}
+	}
+	return false
 }

@@ -77,12 +77,6 @@
                         "description": "If true, returns User in body",
                         "name": "user",
                         "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "If true, returns AccessToken and SessionID in body",
-                        "name": "cookies",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -145,12 +139,6 @@
                         "type": "boolean",
                         "description": "If true, returns User in body",
                         "name": "user",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "If true, returns AccessToken, RefreshToken and SessionID in body",
-                        "name": "cookies",
                         "in": "query"
                     }
                 ],
@@ -511,16 +499,7 @@
         "SignInResponse": {
             "type": "object",
             "properties": {
-                "accessToken": {
-                    "type": "string"
-                },
                 "message": {
-                    "type": "string"
-                },
-                "refreshToken": {
-                    "type": "string"
-                },
-                "sessionID": {
                     "type": "string"
                 },
                 "user": {
@@ -540,9 +519,6 @@
                     "minLength": 3
                 },
                 "password": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }

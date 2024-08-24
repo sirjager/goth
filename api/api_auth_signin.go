@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirjager/gopkg/httpx"
 	"github.com/sirjager/gopkg/utils"
 	"golang.org/x/net/context"
 
@@ -17,11 +18,8 @@ import (
 )
 
 type SignInResponse struct {
-	User         *entity.Profile `json:"user,omitempty"`
-	AccessToken  string          `json:"accessToken,omitempty"`
-	RefreshToken string          `json:"refreshToken,omitempty"`
-	SessionID    string          `json:"sessionID,omitempty"`
-	Message      string          `json:"message,omitempty"`
+	User    *entity.Profile `json:"user,omitempty"`
+	Message string          `json:"message,omitempty"`
 } //	@name	SignInResponse
 
 var errInvalidCredentials = errors.New("invalid credentials")
@@ -36,19 +34,18 @@ var errInvalidCredentials = errors.New("invalid credentials")
 //	@Router			/auth/signin [get]
 //	@Security		BasicAuth
 //	@Param			user	query		bool			false	"If true, returns User in body"
-//	@Param			cookies	query		bool			false	"If true, returns AccessToken, RefreshToken and SessionID in body"
 //	@Success		200		{object}	SignInResponse	"SignInResponse"
 func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	identity, _password, ok := r.BasicAuth()
 	if !ok {
-		s.Failure(w, errors.New("invalid authorization header"), http.StatusBadRequest)
+		httpx.Error(w, errors.New("invalid authorization header"), http.StatusBadRequest)
 		return
 	}
 
 	password, err := vo.NewPassword(_password)
 	if err != nil {
-		s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
+		httpx.Error(w, errInvalidCredentials, http.StatusUnauthorized)
 		return
 	}
 
@@ -57,25 +54,26 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	res := _getUser(r.Context(), identity, s.repo)
 	if res.Error != nil {
 		if res.StatusCode == http.StatusBadRequest {
-			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
+			httpx.Error(w, errInvalidCredentials, http.StatusUnauthorized)
 			return
 		}
 		if res.StatusCode == http.StatusNotFound {
-			s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
+			httpx.Error(w, errInvalidCredentials, http.StatusUnauthorized)
 			return
 		}
-		s.Failure(w, res.Error, res.StatusCode)
+		httpx.Error(w, res.Error, res.StatusCode)
 		return
 	}
 
 	// validate password hash
 	if err = password.VerifyPassword(res.User.Password.Value()); err != nil {
-		s.Failure(w, errInvalidCredentials, http.StatusUnauthorized)
+		httpx.Error(w, errInvalidCredentials, http.StatusUnauthorized)
 		return
 	}
 
 	if !res.User.Verified {
-		s.Failure(w, errEmailNotVerified, http.StatusUnauthorized)
+		s.logr.Error().Msg("email not verified")
+		httpx.Error(w, errEmailNotVerified, http.StatusUnauthorized)
 		return
 	}
 
@@ -86,12 +84,12 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	accessExpiry := s.config.AuthAccessTokenExpire
 	accessToken, accessPayload, err := s.toknb.CreateToken(accessData, accessExpiry)
 	if err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 	accessKey := payload.SessionAccessKey(res.User.ID.Value().String(), sessionID)
 	if err = s.cache.Set(ctx, accessKey, accessPayload, accessExpiry); err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 
@@ -100,12 +98,12 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	refreshExpiry := s.config.AuthRefreshTokenExpire
 	refreshToken, refreshPayload, err := s.toknb.CreateToken(refreshData, refreshExpiry)
 	if err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 	refreshKey := payload.SessionRefreshKey(res.User.ID.Value().String(), sessionID)
 	if err = s.cache.Set(ctx, refreshKey, refreshPayload, refreshExpiry); err != nil {
-		s.Failure(w, err)
+		httpx.Error(w, err)
 		return
 	}
 
@@ -131,23 +129,12 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	userParam := r.URL.Query().Get("user")
 	getUser := userParam == "true" || (r.URL.Query().Has("user") && userParam == "")
 
-	cookiesParams := r.URL.Query().Get("cookies")
-	getCookies := cookiesParams == "true" ||
-		(r.URL.Query().Has("cookies") && cookiesParams == "")
-
 	response := SignInResponse{Message: "signed in successfully"}
 
 	if getUser {
 		response.User = res.User.Profile()
 	}
-
-	if getCookies {
-		response.SessionID = sessionID
-		response.AccessToken = accessToken
-		response.RefreshToken = refreshToken
-	}
-
-	s.Success(w, response, res.StatusCode)
+	httpx.Success(w, response, res.StatusCode)
 }
 
 func _getUser(ctx context.Context, id string, repo repository.Repo) users.UserReadResult {

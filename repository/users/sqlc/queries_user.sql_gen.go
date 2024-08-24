@@ -212,8 +212,9 @@ UPDATE "users" SET
   first_name = $2, 
   last_name = $3,
   picture_url = $4,
-  avatar_url = $5
-WHERE id = $6 RETURNING id, email, username, password, verified, blocked, provider, google_id, full_name, first_name, last_name, avatar_url, picture_url, master, created_at, updated_at
+  avatar_url = $5,
+  username = $6
+WHERE id = $7 RETURNING id, email, username, password, verified, blocked, provider, google_id, full_name, first_name, last_name, avatar_url, picture_url, master, created_at, updated_at
 `
 
 type UserUpdateParams struct {
@@ -222,6 +223,7 @@ type UserUpdateParams struct {
 	LastName   string    `json:"last_name"`
 	PictureUrl string    `json:"picture_url"`
 	AvatarUrl  string    `json:"avatar_url"`
+	Username   string    `json:"username"`
 	ID         uuid.UUID `json:"id"`
 }
 
@@ -232,6 +234,7 @@ func (q *Queries) UserUpdate(ctx context.Context, arg UserUpdateParams) (User, e
 		arg.LastName,
 		arg.PictureUrl,
 		arg.AvatarUrl,
+		arg.Username,
 		arg.ID,
 	)
 	var i User

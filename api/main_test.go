@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sirjager/gopkg/cache"
+	"github.com/sirjager/gopkg/mail"
 	"github.com/sirjager/gopkg/tokens"
 
 	"github.com/sirjager/goth/config"
@@ -20,6 +21,7 @@ var (
 	testCache  cache.Cache
 	testTokens tokens.TokenBuilder
 	testLogr   zerolog.Logger
+	testMail   mail.Sender
 )
 
 func TestMain(M *testing.M) {

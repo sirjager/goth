@@ -203,6 +203,8 @@ github.com/sagikazarmark/slog-shim v0.1.0 h1:diDBnUNK9N/354PgrxMywXnAwEr1QZcOr6g
 github.com/sagikazarmark/slog-shim v0.1.0/go.mod h1:SrcSrq8aKtyuqEI1uvTDTK1arOWRIczQRv+GVI1AkeQ=
 github.com/sirjager/gopkg v0.5.0 h1:QFEEXFRKpDLDX5lOEtngaIPZCiV7lfogl6c7/DpQjmo=
 github.com/sirjager/gopkg v0.5.0/go.mod h1:mTNVmHWmrm/grhHnetX4FzzjhuOYVHhBoKc/beiAmgs=
+github.com/sirjager/gopkg v0.6.0 h1:AHaUq0z5OOQ43K6AiusSpsctViO7tB3vAYbct6ZCANQ=
+github.com/sirjager/gopkg v0.6.0/go.mod h1:mTNVmHWmrm/grhHnetX4FzzjhuOYVHhBoKc/beiAmgs=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=

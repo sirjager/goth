@@ -29,13 +29,13 @@ func (a *Server) MountHandlers() {
 		r.Get("/verify", a.VerifyEmail)
 		r.Post("/reset", a.Reset)
 
-		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
+		r.With(mw.RequiresAccessToken(a.adapters), mw.RequiresVerified()).
 			Get("/user", a.AuthUser)
 
-		r.With(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
+		r.With(mw.RequiresAccessToken(a.adapters), mw.RequiresVerified()).
 			Get("/delete", a.Delete)
 
-		r.With(mw.RequiresRefreshToken(a.repo, a.toknb, a.cache, a.logr), mw.RequiresVerified()).
+		r.With(mw.RequiresRefreshToken(a.adapters), mw.RequiresVerified()).
 			Get("/refresh", a.RefreshToken)
 
 		r.Get("/signout/{provider}", a.Signout)
@@ -44,14 +44,14 @@ func (a *Server) MountHandlers() {
 	})
 
 	c.Route("/users", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr))
+		r.Use(mw.RequiresAccessToken(a.adapters))
 		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresMaster())
 		r.Get("/", a.UsersGet)
 	})
 
 	c.Route("/users/{identity}", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(a.repo, a.toknb, a.cache, a.logr))
+		r.Use(mw.RequiresAccessToken(a.adapters))
 		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresPermissions())
 
