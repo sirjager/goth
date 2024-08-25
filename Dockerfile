@@ -29,7 +29,6 @@ RUN mkdir docs
 COPY  start.sh .
 COPY  wait-for.sh .
 COPY defaults.env .
-COPY docs/swagger.json ./docs/
 
 RUN chmod +x start.sh wait-for.sh
 
