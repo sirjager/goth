@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -40,10 +39,8 @@ func TestMain(M *testing.M) {
 		log.Fatal().Err(err).Msg("failed to create token builder")
 	}
 
-	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
-	redirect := fmt.Sprintf("http://%s", address)
 	// initializing sessions manager using redis backed
-	oauth := oauth.NewOAuth(redirect, config, logr)
+	oauth := oauth.NewOAuth(config, logr)
 	if err = oauth.InitializeRedisStore(config.RedisURLShort, config.AuthTokenSecret); err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize redis store")
 	}
