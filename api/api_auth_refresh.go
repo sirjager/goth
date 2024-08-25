@@ -32,15 +32,15 @@ func (s *Server) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	sessionID := utils.XIDNew().String()
 	accessData := payload.NewAccessPayload(user, sessionID)
-	accessTokenDur := s.config.AuthAccessTokenExpire
-	accessToken, accessTokenPayload, err := s.toknb.CreateToken(accessData, accessTokenDur)
+	accessTokenDur := s.Config().AuthAccessTokenExpire
+	accessToken, accessTokenPayload, err := s.Tokens().CreateToken(accessData, accessTokenDur)
 	if err != nil {
 		httpx.Error(w, err)
 		return
 	}
 
 	accessKey := payload.SessionAccessKey(user.ID.Value().String(), sessionID)
-	if err = s.cache.Set(r.Context(), accessKey, accessTokenPayload, accessTokenDur); err != nil {
+	if err = s.Cache().Set(r.Context(), accessKey, accessTokenPayload, accessTokenDur); err != nil {
 		httpx.Error(w, err)
 		return
 	}

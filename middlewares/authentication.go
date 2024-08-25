@@ -7,7 +7,9 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/sirjager/gopkg/httpx"
+
 	"github.com/sirjager/goth/entity"
+	"github.com/sirjager/goth/modules"
 )
 
 type (
@@ -31,11 +33,11 @@ const (
 )
 
 // RequiresAccessToken authenticates the request and adds the user to the context
-func RequiresAccessToken(adapters *Adapters) func(next http.Handler) http.Handler {
+func RequiresAccessToken(modules *modules.Modules) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			user, status, err := getAuthenticatedUser(r, adapters, CookieAccessToken)
+			user, status, err := getAuthenticatedUser(r, modules, CookieAccessToken)
 			if err != nil {
 				httpx.Error(w, err, status)
 				return
@@ -47,11 +49,11 @@ func RequiresAccessToken(adapters *Adapters) func(next http.Handler) http.Handle
 }
 
 // RequiresRefreshToken authenticates the request and adds the user to the context
-func RequiresRefreshToken(adapters *Adapters) func(next http.Handler) http.Handler {
+func RequiresRefreshToken(modules *modules.Modules) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			user, status, err := getAuthenticatedUser(r, adapters, CookieRefreshToken)
+			user, status, err := getAuthenticatedUser(r, modules, CookieRefreshToken)
 			if err != nil {
 				httpx.Error(w, err, status)
 				return

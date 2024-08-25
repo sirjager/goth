@@ -31,8 +31,8 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 
 	codeQueryParam := r.URL.Query().Get("code")
 	emailAction := payload.UserDeletion
-	cooldownTime := s.config.AuthUserDeleteCooldown
-	codeExpiration := s.config.AuthUserDeleteExpire
+	cooldownTime := s.Config().AuthUserDeleteCooldown
+	codeExpiration := s.Config().AuthUserDeleteExpire
 	hasCode := len(codeQueryParam) != 0
 
 	if !user.Verified {
@@ -44,7 +44,7 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 	isAlreadyPending := true
 	var pending payload.EmailPayload
 	actionKey := payload.EmailKey(user.Email.Value(), emailAction)
-	if err := s.cache.Get(r.Context(), actionKey, &pending); err != nil {
+	if err := s.Cache().Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			httpx.Error(w, err)
 			return
@@ -69,13 +69,13 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 			CacheExp:  codeExpiration,
 			CreatedAt: time.Now(),
 		}
-		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
+		token, _, err := s.Tokens().CreateToken(payload, codeExpiration)
 		if err != nil {
 			httpx.Error(w, err)
 			return
 		}
 
-		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
+		if err = s.Tasks().SendEmail(r.Context(), worker.SendEmailParams{Token: token},
 			asynq.MaxRetry(2), asynq.Group(worker.PriorityLazy),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(3000, 6000))), // 1 to 5 seconds
 		); err != nil {
@@ -109,10 +109,10 @@ func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 	if codeQueryParam == pending.Code && len(codeQueryParam) != 0 && len(pending.Code) != 0 {
 		deleteParams := users.UserDeleteTxParams{
 			UserID: user.ID, AfterUpdate: func() error {
-				return s.cache.Delete(r.Context(), actionKey)
+				return s.Cache().Delete(r.Context(), actionKey)
 			},
 		}
-		res := s.repo.UserDeleteTx(r.Context(), deleteParams)
+		res := s.Repo().UserDeleteTx(r.Context(), deleteParams)
 		if res.Error != nil {
 			httpx.Error(w, res.Error, res.StatusCode)
 			return

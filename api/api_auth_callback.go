@@ -14,7 +14,7 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
+func (s *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	redirectURL := gothic.GetState(r) // set by AuthProvider, original url of calling client
 
 	provider := chi.URLParam(r, "provider")
@@ -33,7 +33,7 @@ func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	newUser := GothUserToEntityUser(gothUser)
 
 	// If master user does not exists, we make newUser a Master User.
-	exists, existsErr := masterUserExists(r.Context(), a.repo)
+	exists, existsErr := masterUserExists(r.Context(), s.Repo())
 	if existsErr != nil {
 		http.Error(w, existsErr.Error(), http.StatusInternalServerError)
 		return
@@ -42,7 +42,7 @@ func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		newUser.Master = true
 	}
 
-	result := a.repo.UserCreate(r.Context(), newUser)
+	result := s.Repo().UserCreate(r.Context(), newUser)
 	if result.Error != nil {
 		// if its not, user already exits error, return it
 		if result.StatusCode != http.StatusConflict {
@@ -50,7 +50,7 @@ func (a *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// if its user already exits error, get user and return it
-		result = a.repo.UserGetByEmail(r.Context(), vo.MustParseEmail(gothUser.Email))
+		result = s.Repo().UserGetByEmail(r.Context(), vo.MustParseEmail(gothUser.Email))
 	}
 
 	if result.Error != nil {

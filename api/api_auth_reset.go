@@ -43,8 +43,8 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 
 	hasCode := len(param.Code) != 0
 	emailAction := payload.PasswordReset
-	cooldownTime := s.config.AuthPasswordResetCooldown
-	codeExpiration := s.config.AuthPasswordResetExpire
+	cooldownTime := s.Config().AuthPasswordResetCooldown
+	codeExpiration := s.Config().AuthPasswordResetExpire
 
 	email, err := vo.NewEmail(param.Email)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := s.repo.UserGetByEmail(r.Context(), email)
+	res := s.Repo().UserGetByEmail(r.Context(), email)
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
 			httpx.Error(w, res.Error, res.StatusCode)
@@ -75,7 +75,7 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 	isAlreadyPending := true
 	var pending payload.EmailPayload
 	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
-	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
+	if err = s.Cache().Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			httpx.Error(w, err)
 			return
@@ -100,13 +100,13 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 			CacheExp:  codeExpiration,
 			CreatedAt: time.Now(),
 		}
-		token, _, err := s.toknb.CreateToken(payload, codeExpiration)
+		token, _, err := s.Tokens().CreateToken(payload, codeExpiration)
 		if err != nil {
 			httpx.Error(w, err)
 			return
 		}
 
-		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
+		if err = s.Tasks().SendEmail(r.Context(), worker.SendEmailParams{Token: token},
 			asynq.MaxRetry(3), asynq.Group(worker.PriorityUrgent),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
 		); err != nil {
@@ -157,11 +157,11 @@ func (s *Server) Reset(w http.ResponseWriter, r *http.Request) {
 		UserID:   res.User.ID,
 		Password: hashedPassword,
 		AfterUpdate: func() error {
-			return s.cache.Delete(r.Context(), actionKey)
+			return s.Cache().Delete(r.Context(), actionKey)
 		},
 	}
 
-	res = s.repo.UserUpdatePasswordTx(r.Context(), updateParams)
+	res = s.Repo().UserUpdatePasswordTx(r.Context(), updateParams)
 	if res.Error != nil {
 		httpx.Error(w, res.Error, res.StatusCode)
 		return

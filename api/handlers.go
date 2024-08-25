@@ -7,55 +7,55 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 )
 
-func (a *Server) MountHandlers() {
+func (s *Server) MountHandlers() {
 	c := chi.NewRouter()
-	defer func() { a.router = c }()
+	defer func() { s.router = c }()
 
-	c.Use(mw.Logger(a.logr, a.config))
+	c.Use(mw.Logger(s.Modules))
 	c.Use(mw.UseCors())
 	c.Use(mw.RequestID())
 	c.Use(middleware.Compress(5))
 	c.Use(middleware.RealIP)
 	c.Use(middleware.Recoverer)
 
-	c.Get("/", a.Welcome)
-	c.Get("/health", a.Health)
-	c.Get("/swagger", a.SwaggerDocs)
+	c.Get("/", s.Welcome)
+	c.Get("/health", s.Health)
+	c.Get("/swagger", s.SwaggerDocs)
 
 	// NOTE: Authentication routes
 	c.Route("/auth", func(r chi.Router) {
-		r.Get("/signin", a.Signin)
-		r.Post("/signup", a.Signup)
-		r.Get("/verify", a.VerifyEmail)
-		r.Post("/reset", a.Reset)
+		r.Get("/signin", s.Signin)
+		r.Post("/signup", s.Signup)
+		r.Get("/verify", s.VerifyEmail)
+		r.Post("/reset", s.Reset)
 
-		r.With(mw.RequiresAccessToken(a.adapters), mw.RequiresVerified()).
-			Get("/user", a.AuthUser)
+		r.With(mw.RequiresAccessToken(s.Modules), mw.RequiresVerified()).
+			Get("/user", s.AuthUser)
 
-		r.With(mw.RequiresAccessToken(a.adapters), mw.RequiresVerified()).
-			Get("/delete", a.Delete)
+		r.With(mw.RequiresAccessToken(s.Modules), mw.RequiresVerified()).
+			Get("/delete", s.Delete)
 
-		r.With(mw.RequiresRefreshToken(a.adapters), mw.RequiresVerified()).
-			Get("/refresh", a.RefreshToken)
+		r.With(mw.RequiresRefreshToken(s.Modules), mw.RequiresVerified()).
+			Get("/refresh", s.RefreshToken)
 
-		r.Get("/signout/{provider}", a.Signout)
-		r.Get("/{provider}", a.OAuthProvider)
-		r.Get("/{provider}/callback", a.OAuthCallback)
+		r.Get("/signout/{provider}", s.Signout)
+		r.Get("/{provider}", s.OAuthProvider)
+		r.Get("/{provider}/callback", s.OAuthCallback)
 	})
 
 	c.Route("/users", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(a.adapters))
+		r.Use(mw.RequiresAccessToken(s.Modules))
 		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresMaster())
-		r.Get("/", a.UsersGet)
+		r.Get("/", s.UsersGet)
 	})
 
 	c.Route("/users/{identity}", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(a.adapters))
+		r.Use(mw.RequiresAccessToken(s.Modules))
 		r.Use(mw.RequiresVerified())
 		r.Use(mw.RequiresPermissions())
 
-		r.Get("/", a.UserGet)
-		r.Patch("/", a.UserUpdate)
+		r.Get("/", s.UserGet)
+		r.Patch("/", s.UserUpdate)
 	})
 }

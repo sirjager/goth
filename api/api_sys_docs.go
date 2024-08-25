@@ -12,15 +12,15 @@ import (
 // @Produce	html
 // @Success	200	{string}	string	"HTML content"
 // @Router		/swagger [get]
-func (a *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
+func (s *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
 	htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
-		SpecURL:            a.config.DocsSpecURL,
+		SpecURL:            s.Config().DocsSpecURL,
 		HideDownloadButton: true,
 		DarkMode:           true,
 		Theme:              scalar.ThemeSolarized,
 		Layout:             scalar.LayoutModern,
 		CustomOptions: scalar.CustomOptions{
-			PageTitle: fmt.Sprintf("%s Api Documentations", a.config.ServiceName),
+			PageTitle: fmt.Sprintf("%s Api Documentations", s.Config().ServiceName),
 		},
 	})
 	if err != nil {

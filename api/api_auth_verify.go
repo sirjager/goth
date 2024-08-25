@@ -37,17 +37,17 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	hasCode := len(codeQueryParam) != 0
 	emailAction := payload.EmailVerification
-	cooldownTime := s.config.AuthEmailVerifyCooldown
-	codeExpiration := s.config.AuthEmailVerifyExpire
+	cooldownTime := s.Config().AuthEmailVerifyCooldown
+	codeExpiration := s.Config().AuthEmailVerifyExpire
 
 	email, err := vo.NewEmail(emailQueryParam)
 	if err != nil {
-		s.logr.Error().Err(err).Msg("invalid email")
+		s.Logger().Error().Err(err).Msg("invalid email")
 		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
 
-	res := s.repo.UserGetByEmail(r.Context(), email)
+	res := s.Repo().UserGetByEmail(r.Context(), email)
 	if res.Error != nil {
 		if res.StatusCode != http.StatusNotFound {
 			httpx.Error(w, res.Error, res.StatusCode)
@@ -70,7 +70,7 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	isAlreadyPending := true
 	var pending payload.EmailPayload
 	actionKey := payload.EmailKey(res.User.Email.Value(), emailAction)
-	if err = s.cache.Get(r.Context(), actionKey, &pending); err != nil {
+	if err = s.Cache().Get(r.Context(), actionKey, &pending); err != nil {
 		if !errors.Is(err, cache.ErrNoRecord) {
 			httpx.Error(w, err)
 			return
@@ -95,13 +95,13 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 			CacheExp:  codeExpiration,
 			CreatedAt: time.Now(),
 		}
-		token, _, tokenErr := s.toknb.CreateToken(payload, codeExpiration)
+		token, _, tokenErr := s.Tokens().CreateToken(payload, codeExpiration)
 		if tokenErr != nil {
 			httpx.Error(w, tokenErr)
 			return
 		}
 
-		if err = s.tasks.SendEmail(r.Context(), worker.SendEmailParams{Token: token},
+		if err = s.Tasks().SendEmail(r.Context(), worker.SendEmailParams{Token: token},
 			asynq.MaxRetry(3), asynq.Group(worker.PriorityLow),
 			asynq.ProcessIn(time.Millisecond*time.Duration(utils.RandomInt(1000, 5000))), // 1 to 5 seconds
 		); err != nil {
@@ -136,8 +136,8 @@ func (s *Server) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// now update it to users repository
-	res = s.repo.UserUpdateVerified(r.Context(), res.User.ID, true)
+	// now update it to users.Repo()sitory
+	res = s.Repo().UserUpdateVerified(r.Context(), res.User.ID, true)
 	if res.Error != nil {
 		httpx.Error(w, res.Error, res.StatusCode)
 		return

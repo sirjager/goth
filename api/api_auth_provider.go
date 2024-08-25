@@ -30,7 +30,7 @@ func (a *Server) OAuthProvider(w http.ResponseWriter, r *http.Request) {
 	refererURL = parsedURL.Scheme + "://" + parsedURL.Host
 
 	provider := chi.URLParam(r, "provider")
-	if user, authenticated := mw.IsAuthenticated(r, a.adapters); authenticated {
+	if user, authenticated := mw.IsAuthenticated(r, a.Modules); authenticated {
 		response := UserResponse{User: user.Profile()}
 		httpx.Success(w, response)
 		return

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	mw "github.com/sirjager/goth/middlewares"
+	"github.com/sirjager/goth/modules"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	mockTask "github.com/sirjager/goth/worker/mock"
 )
@@ -33,7 +33,16 @@ func TestSwaggerDocs(t *testing.T) {
 			defer ctrl.Finish()
 			repo := mockRepo.NewMockRepo(ctrl)
 			testTasks := mockTask.NewMockTaskDistributor(ctrl)
-			adapters := mw.LoadAdapters(testConfig, repo, testTokens, testCache, testLogr, testMail, testTasks)
+
+			adapters := modules.NewModules(
+				testConfig,
+				testLogr,
+				testCache,
+				repo,
+				testTokens,
+				testMail,
+				testTasks,
+			)
 			server := NewServer(adapters)
 			recoder := httptest.NewRecorder()
 

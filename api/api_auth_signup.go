@@ -24,9 +24,9 @@ type SignUpRequestParams struct {
 //	@Router			/auth/signup [post]
 //	@Param			body	body		SignUpRequestParams	true	"Signup request params"
 //	@Success		201		{object}	UserResponse		"User object"
-func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	var params SignUpRequestParams
-	if err := a.ParseAndValidate(r, &params); err != nil {
+	if err := s.ParseAndValidate(r, &params); err != nil {
 		httpx.Error(w, err, http.StatusBadRequest)
 		return
 	}
@@ -64,7 +64,7 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If master user does not exists, we make newUser a Master User.
-	exists, existsErr := masterUserExists(r.Context(), a.repo)
+	exists, existsErr := masterUserExists(r.Context(), s.Repo())
 	if existsErr != nil {
 		httpx.Error(w, existsErr)
 		return
@@ -73,7 +73,7 @@ func (a *Server) Signup(w http.ResponseWriter, r *http.Request) {
 		newUser.Master = true
 	}
 
-	result := a.repo.UserCreate(r.Context(), newUser)
+	result := s.Repo().UserCreate(r.Context(), newUser)
 	if result.Error != nil {
 		httpx.Error(w, result.Error, result.StatusCode)
 		return

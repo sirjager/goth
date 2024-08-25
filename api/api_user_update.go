@@ -42,7 +42,7 @@ func (s *Server) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	if mw.IsCurrentUserIdentity(r) {
 		target = user // if target is authorized user, self update
 	} else {
-		result := fetchUserFromRepository(r.Context(), identity, s.repo)
+		result := fetchUserFromRepository(r.Context(), identity, s.Repo())
 		if result.Error != nil {
 			httpx.Error(w, result.Error, result.StatusCode)
 			return
@@ -82,7 +82,7 @@ func (s *Server) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isUserUpdated {
-		result := s.repo.UserUpdate(r.Context(), target)
+		result := s.Repo().UserUpdate(r.Context(), target)
 		if result.Error != nil {
 			httpx.Error(w, result.Error, result.StatusCode)
 			return

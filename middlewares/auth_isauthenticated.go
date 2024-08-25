@@ -8,12 +8,13 @@ import (
 	"github.com/sirjager/gopkg/tokens"
 
 	"github.com/sirjager/goth/entity"
+	"github.com/sirjager/goth/modules"
 	"github.com/sirjager/goth/payload"
 	"github.com/sirjager/goth/vo"
 )
 
-func IsAuthenticated(r *http.Request, adapters *Adapters) (*entity.User, bool) {
-	user, _, err := getAuthenticatedUser(r, adapters, CookieAccessToken)
+func IsAuthenticated(r *http.Request, modules *modules.Modules) (*entity.User, bool) {
+	user, _, err := getAuthenticatedUser(r, modules, CookieAccessToken)
 	if err != nil || user == nil {
 		return nil, false
 	}
@@ -25,7 +26,7 @@ func IsAuthenticated(r *http.Request, adapters *Adapters) (*entity.User, bool) {
 
 func getAuthenticatedUser(
 	r *http.Request,
-	adapters *Adapters,
+	modules *modules.Modules,
 	cookieName string,
 ) (*entity.User, int, error) {
 	ctx := r.Context()
@@ -33,7 +34,7 @@ func getAuthenticatedUser(
 	var user *entity.User
 
 	// not allowing to use refresh token
-	user, err = authenticateUsingOAuth(r, adapters.Repo)
+	user, err = authenticateUsingOAuth(r, modules.Repo())
 	if err == nil && user != nil && user.Email.Value() != "" {
 		// if we have user and no error we return user
 		return user, http.StatusOK, err
@@ -43,8 +44,8 @@ func getAuthenticatedUser(
 	var accessData payload.BaseAuthPayload
 
 	// if invalid access tokens
-	if _, err = adapters.Toknb.VerifyToken(accessToken, &accessData); err != nil {
-		adapters.Logr.Error().Msg("access token verification failed")
+	if _, err = modules.Tokens().VerifyToken(accessToken, &accessData); err != nil {
+		modules.Logger().Error().Msg("access token verification failed")
 		return nil, http.StatusUnauthorized, errors.New(unauthorized)
 	}
 
@@ -55,27 +56,27 @@ func getAuthenticatedUser(
 		accessKey = payload.SessionRefreshKey(accessData.UserID, accessData.SessionID)
 	}
 
-	if err = adapters.Cache.Get(ctx, accessKey, &accessPayload); err != nil {
+	if err = modules.Cache().Get(ctx, accessKey, &accessPayload); err != nil {
 		// any other internal error, than not found
 		if !errors.Is(err, cache.ErrNoRecord) {
 			return nil, http.StatusInternalServerError, err
 		}
 		// if session is not found, means its expired
-		adapters.Logr.Error().Msg("session not found")
+		modules.Logger().Error().Msg("session not found")
 		return nil, http.StatusUnauthorized, errors.New(unauthorized)
 	}
 
 	// extract payload from stored session to match with incoming access token's payload
 	var storedPayload payload.BaseAuthPayload
-	if err = adapters.Toknb.ReadPayload(&accessPayload, &storedPayload); err != nil {
-		adapters.Logr.Error().Msg("failed to read stored payload")
+	if err = modules.Tokens().ReadPayload(&accessPayload, &storedPayload); err != nil {
+		modules.Logger().Error().Msg("failed to read stored payload")
 		return nil, http.StatusUnauthorized, errors.New(unauthorized)
 	}
 
 	// parse user id from incoming access token payload
 	userID, err := vo.NewIDFrom(accessData.UserID)
 	if err != nil {
-		adapters.Logr.Error().Msg("invalid user id")
+		modules.Logger().Error().Msg("invalid user id")
 		return nil, http.StatusUnauthorized, errors.New(unauthorized)
 	}
 
@@ -94,14 +95,14 @@ func getAuthenticatedUser(
 	}
 
 	// get user from repository, to ensure that user exists, and is valid
-	res := adapters.Repo.UserGetByID(ctx, userID)
+	res := modules.Repo().UserGetByID(ctx, userID)
 	if res.Error != nil {
 		// if its internal error, return as it is
 		if res.StatusCode != http.StatusNotFound {
 			return nil, res.StatusCode, res.Error
 		}
 		// if user not found, return unauthorized
-		adapters.Logr.Error().Msg("user not found")
+		modules.Logger().Error().Msg("user not found")
 		return nil, http.StatusUnauthorized, errors.New(unauthorized)
 	}
 	err = res.Error

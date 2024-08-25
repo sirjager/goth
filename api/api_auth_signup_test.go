@@ -16,7 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/sirjager/goth/entity"
-	mw "github.com/sirjager/goth/middlewares"
+	"github.com/sirjager/goth/modules"
 	repoerrors "github.com/sirjager/goth/repository/errors"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	"github.com/sirjager/goth/repository/users"
@@ -155,7 +155,15 @@ func TestSignup(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			adapters := mw.LoadAdapters(testConfig, repo, testTokens, testCache, testLogr, testMail, testTasks)
+			adapters := modules.NewModules(
+				testConfig,
+				testLogr,
+				testCache,
+				repo,
+				testTokens,
+				testMail,
+				testTasks,
+			)
 			server := NewServer(adapters)
 
 			recoder := httptest.NewRecorder()

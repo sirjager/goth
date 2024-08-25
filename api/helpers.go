@@ -28,13 +28,13 @@ type ErrorResponse struct {
 	Error string `json:"error,omitempty"`
 } // @name ErrorResponse
 
-func (a *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
+func (s *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
 	for _, cookie := range cookies {
 		http.SetCookie(w, cookie)
 	}
 }
 
-func (a *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...int) {
+func (s *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...int) {
 	_message := "OK"
 	if message != "" {
 		_message = message
@@ -50,7 +50,7 @@ func (a *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...
 	}
 }
 
-func (a *Server) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
+func (s *Server) GetPageAndLimitFromRequest(r *http.Request, defaultPage, defaultLimit *int) {
 	pageParam := r.URL.Query().Get("page")
 	limitParam := r.URL.Query().Get("limit")
 	if (pageParam) != "" {
@@ -72,16 +72,16 @@ func (a *Server) ParseJSON(r *http.Request, v interface{}) error {
 	return nil
 }
 
-func (a *Server) ParseAndValidate(r *http.Request, v interface{}, validation ...Validation) error {
+func (s *Server) ParseAndValidate(r *http.Request, v interface{}, validation ...Validation) error {
 	validate := ValidationEnable
 	if len(validation) == 1 {
 		validate = validation[0]
 	}
-	if err := a.ParseJSON(r, v); err != nil {
+	if err := s.ParseJSON(r, v); err != nil {
 		return err
 	}
 	if validate {
-		if err := a.validate.Struct(v); err != nil {
+		if err := s.Validator().Struct(v); err != nil {
 			return err
 		}
 	}

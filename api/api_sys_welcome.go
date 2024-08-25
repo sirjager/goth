@@ -26,16 +26,16 @@ const docsPath = "/swagger"
 //	@Produce		json
 //	@Router			/ [get]
 //	@Success		200	{object}	welcomeResponse
-func (a *Server) Welcome(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Welcome(w http.ResponseWriter, r *http.Request) {
 	response := welcomeResponse{
-		Message: welcomeMessaage(a.config.ServiceName),
+		Message: welcomeMessaage(s.Config().ServiceName),
 		Docs:    docsPath,
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		a.logr.Error().Err(err).Msg("failed to encode welcome response")
+		s.Logger().Error().Err(err).Msg("failed to encode welcome response")
 		http.Error(w, err.Error(), 500)
 	}
 }

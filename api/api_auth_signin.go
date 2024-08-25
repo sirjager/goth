@@ -51,7 +51,7 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 
 	// get user from repository result
 
-	res := _getUser(r.Context(), identity, s.repo)
+	res := _getUser(r.Context(), identity, s.Repo())
 	if res.Error != nil {
 		if res.StatusCode == http.StatusBadRequest {
 			httpx.Error(w, errInvalidCredentials, http.StatusUnauthorized)
@@ -72,7 +72,7 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !res.User.Verified {
-		s.logr.Error().Msg("email not verified")
+		s.Logger().Error().Msg("email not verified")
 		httpx.Error(w, errEmailNotVerified, http.StatusUnauthorized)
 		return
 	}
@@ -81,28 +81,28 @@ func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 
 	// create and save access token payload
 	accessData := payload.NewAccessPayload(res.User, sessionID)
-	accessExpiry := s.config.AuthAccessTokenExpire
-	accessToken, accessPayload, err := s.toknb.CreateToken(accessData, accessExpiry)
+	accessExpiry := s.Config().AuthAccessTokenExpire
+	accessToken, accessPayload, err := s.Tokens().CreateToken(accessData, accessExpiry)
 	if err != nil {
 		httpx.Error(w, err)
 		return
 	}
 	accessKey := payload.SessionAccessKey(res.User.ID.Value().String(), sessionID)
-	if err = s.cache.Set(ctx, accessKey, accessPayload, accessExpiry); err != nil {
+	if err = s.Cache().Set(ctx, accessKey, accessPayload, accessExpiry); err != nil {
 		httpx.Error(w, err)
 		return
 	}
 
 	// create and save refresh token payload
 	refreshData := payload.NewRefreshPayload(res.User, sessionID)
-	refreshExpiry := s.config.AuthRefreshTokenExpire
-	refreshToken, refreshPayload, err := s.toknb.CreateToken(refreshData, refreshExpiry)
+	refreshExpiry := s.Config().AuthRefreshTokenExpire
+	refreshToken, refreshPayload, err := s.Tokens().CreateToken(refreshData, refreshExpiry)
 	if err != nil {
 		httpx.Error(w, err)
 		return
 	}
 	refreshKey := payload.SessionRefreshKey(res.User.ID.Value().String(), sessionID)
-	if err = s.cache.Set(ctx, refreshKey, refreshPayload, refreshExpiry); err != nil {
+	if err = s.Cache().Set(ctx, refreshKey, refreshPayload, refreshExpiry); err != nil {
 		httpx.Error(w, err)
 		return
 	}

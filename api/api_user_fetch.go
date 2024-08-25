@@ -22,7 +22,7 @@ type UserResponse struct {
 // @Param			identity	path		string			true	"Identity can either be email or id"
 // @Success		200			{object}	UserResponse	"UserResponse"
 // @Router			/users/{identity} [get]
-func (a *Server) UserGet(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UserGet(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	identity := chi.URLParam(r, "identity")
 	var result users.UserReadResult
@@ -31,7 +31,7 @@ func (a *Server) UserGet(w http.ResponseWriter, r *http.Request) {
 	if mw.IsCurrentUserIdentity(r) {
 		result = users.UserReadResult{Error: nil, User: user, StatusCode: 200}
 	} else {
-		result = fetchUserFromRepository(r.Context(), identity, a.repo)
+		result = fetchUserFromRepository(r.Context(), identity, s.Repo())
 	}
 
 	if result.Error != nil {
@@ -56,11 +56,11 @@ type UsersResponse struct {
 // @Param			limit	query		int				false	"Per Page: Default 100"
 // @Success		200		{object}	UsersResponse	"UsersResponse"
 // @Router			/users [get]
-func (a *Server) UsersGet(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UsersGet(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 100
-	a.GetPageAndLimitFromRequest(r, &page, &limit)
-	result := a.repo.UserGetAll(r.Context(), limit, page)
+	s.GetPageAndLimitFromRequest(r, &page, &limit)
+	result := s.Repo().UserGetAll(r.Context(), limit, page)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), result.StatusCode)
 		return

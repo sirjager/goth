@@ -24,20 +24,20 @@ type healthResponse struct {
 // @Produce		json
 // @Router			/health [get]
 // @Success		200	{object}	healthResponse
-func (a *Server) Health(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 	response := healthResponse{
 		Timestamp: time.Now(),
-		Service:   a.config.ServiceName,
-		Server:    a.config.ServerName,
-		Started:   a.config.StartTime,
+		Service:   s.Config().ServiceName,
+		Server:    s.Config().ServerName,
+		Started:   s.Config().StartTime,
 		Status:    healthpb.HealthCheckResponse_SERVING.String(),
-		Uptime:    time.Since(a.config.StartTime).String(),
+		Uptime:    time.Since(s.Config().StartTime).String(),
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		a.logr.Error().Err(err).Msg("failed to encode health response")
+		s.Logger().Error().Err(err).Msg("failed to encode health response")
 		http.Error(w, err.Error(), 500)
 	}
 }
