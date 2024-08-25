@@ -16,7 +16,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/markbates/goth v1.80.0
 	github.com/rs/zerolog v1.33.0
-	github.com/sirjager/gopkg v0.6.0
+	github.com/sirjager/gopkg v0.7.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.3

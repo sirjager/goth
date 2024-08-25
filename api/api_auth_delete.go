@@ -20,11 +20,11 @@ import (
 // Delete User
 //
 //	@Summary		Delete
-//	@Description	Delete User
+//	@Description	Initiate Authenticated User Deletion
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/delete [get]
+//	@Router			/auth/user [delete]
 //	@Param			code	query	string	false	"code if already have"
 func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)

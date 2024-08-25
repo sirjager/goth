@@ -17,7 +17,8 @@ func (s *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
 		SpecURL:            s.Config().DocsSpecURL,
 		HideDownloadButton: true,
 		DarkMode:           true,
-		Theme:              scalar.ThemeSolarized,
+		ShowSidebar:        true,
+		Theme:              scalar.ThemeBluePlanet,
 		Layout:             scalar.LayoutModern,
 		CustomOptions: scalar.CustomOptions{
 			PageTitle: fmt.Sprintf("%s Api Documentations", s.Config().ServiceName),

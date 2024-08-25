@@ -11,11 +11,11 @@ func (s *Server) MountHandlers() {
 	c := chi.NewRouter()
 	defer func() { s.router = c }()
 
-	c.Use(mw.Logger(s.Modules))
+	c.Use(middleware.RealIP)
 	c.Use(mw.UseCors())
 	c.Use(mw.RequestID())
+	c.Use(mw.Logger(s.Modules))
 	c.Use(middleware.Compress(5))
-	c.Use(middleware.RealIP)
 	c.Use(middleware.Recoverer)
 
 	c.Get("/", s.Welcome)

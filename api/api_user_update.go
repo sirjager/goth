@@ -1,24 +1,24 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-
 	"github.com/sirjager/gopkg/httpx"
+
 	"github.com/sirjager/goth/entity"
 	mw "github.com/sirjager/goth/middlewares"
-	"github.com/sirjager/goth/vo"
 )
 
 type UpdateUserParams struct {
-	Email      string `json:"email,omitempty"`
-	Username   string `json:"username,omitempty"`
-	Password   string `json:"password,omitempty"`
-	FirstName  string `json:"firstName,omitempty"`
-	LastName   string `json:"lastName,omitempty"`
-	FullName   string `json:"fullName,omitempty"`
-	PictureURL string `json:"pictureURL,omitempty"`
+	Username        string `json:"username,omitempty"`
+	FirstName       string `json:"firstName,omitempty"`
+	LastName        string `json:"lastName,omitempty"`
+	FullName        string `json:"fullName,omitempty"`
+	PictureURL      string `json:"pictureURL,omitempty"`
+	NewPassword     string `json:"newPassword,omitempty"`
+	CurrentPassword string `json:"currentPassword,omitempty"`
 } //	@name	UpdateUserParams
 
 // @Summary		Update User
@@ -50,46 +50,23 @@ func (s *Server) UserUpdate(w http.ResponseWriter, r *http.Request) {
 		target = result.User
 	}
 
-	isUserUpdated := false
-	// only update when params are not empty and when different
-
-	if params.Username != "" && params.Username != user.Username.Value() {
-		newUsername, err := vo.NewUsername(params.Username)
-		if err != nil {
-			httpx.Error(w, err, http.StatusBadRequest)
-			return
-		}
-		isUserUpdated = true
-		user.Username = newUsername
+	shouldUpdate, err := patchUser(target, &params)
+	if err != nil {
+		httpx.Error(w, err, http.StatusBadRequest)
+		return
 	}
 
-	if params.FullName != "" && params.FullName != user.FullName {
-		isUserUpdated = true
-		user.FullName = params.FullName
+	if !shouldUpdate {
+		httpx.Error(w, errors.New("no valid updates or no changes"), http.StatusBadRequest)
+		return
 	}
 
-	if params.FirstName != "" && params.FirstName != user.FirstName {
-		isUserUpdated = true
-		user.FirstName = params.FirstName
-	}
-	if params.LastName != "" && params.LastName != user.LastName {
-		isUserUpdated = true
-		user.LastName = params.LastName
-	}
-	if params.PictureURL != "" && params.PictureURL != user.PictureURL {
-		isUserUpdated = true
-		user.PictureURL = params.PictureURL
+	res := s.Repo().UserUpdate(r.Context(), target)
+	if res.Error != nil {
+		httpx.Error(w, res.Error, res.StatusCode)
+		return
 	}
 
-	if isUserUpdated {
-		result := s.Repo().UserUpdate(r.Context(), target)
-		if result.Error != nil {
-			httpx.Error(w, result.Error, result.StatusCode)
-			return
-		}
-		target = result.User
-	}
-
-	response := UserResponse{target.Profile()}
+	response := UserResponse{res.User.Profile()}
 	httpx.Success(w, response)
 }

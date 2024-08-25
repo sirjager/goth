@@ -41,30 +41,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/delete": {
-            "get": {
-                "description": "Delete User",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Delete",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "code if already have",
-                        "name": "code",
-                        "in": "query"
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/auth/refresh": {
             "get": {
                 "description": "Refreshes Access Token",
@@ -217,7 +193,7 @@ const docTemplate = `{
         },
         "/auth/user": {
             "get": {
-                "description": "Returns Authenticated User",
+                "description": "Get Authenticated User",
                 "produces": [
                     "application/json"
                 ],
@@ -225,6 +201,57 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "User",
+                "responses": {
+                    "200": {
+                        "description": "UserResponse",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Initiate Authenticated User Deletion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Delete",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "code if already have",
+                        "name": "code",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            },
+            "patch": {
+                "description": "Update Authenticated User",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User",
+                "parameters": [
+                    {
+                        "description": "Update User Params",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateUserParams"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "UserResponse",
@@ -533,7 +560,7 @@ const docTemplate = `{
         "UpdateUserParams": {
             "type": "object",
             "properties": {
-                "email": {
+                "currentPassword": {
                     "type": "string"
                 },
                 "firstName": {
@@ -545,7 +572,7 @@ const docTemplate = `{
                 "lastName": {
                     "type": "string"
                 },
-                "password": {
+                "newPassword": {
                     "type": "string"
                 },
                 "pictureURL": {
