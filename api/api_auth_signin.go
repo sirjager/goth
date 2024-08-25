@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -38,7 +37,6 @@ var errInvalidCredentials = errors.New("invalid credentials")
 //	@Success		200		{object}	SignInResponse	"SignInResponse"
 func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	fmt.Println(r.RemoteAddr)
 	identity, _password, ok := r.BasicAuth()
 	if !ok {
 		httpx.Error(w, errors.New("invalid authorization header"), http.StatusBadRequest)

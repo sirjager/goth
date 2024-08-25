@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sirjager/gopkg/httpx"
-
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/repository/users"
 	"github.com/sirjager/goth/vo"
@@ -31,22 +29,6 @@ type ErrorResponse struct {
 func (s *Server) SetCookies(w http.ResponseWriter, cookies ...*http.Cookie) {
 	for _, cookie := range cookies {
 		http.SetCookie(w, cookie)
-	}
-}
-
-func (s *Server) SuccessOK(w http.ResponseWriter, message string, statusCode ...int) {
-	_message := "OK"
-	if message != "" {
-		_message = message
-	}
-	status := 200
-	if len(statusCode) == 1 {
-		status = statusCode[0]
-	}
-	w.Header().Add("Content-Type", "text/plain")
-	w.WriteHeader(status)
-	if _, err := w.Write([]byte(_message)); err != nil {
-		httpx.Error(w, err)
 	}
 }
 

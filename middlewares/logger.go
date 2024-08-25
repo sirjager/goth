@@ -45,6 +45,7 @@ func Logger(modules *modules.Modules) func(next http.Handler) http.Handler {
 			next.ServeHTTP(rec, r)
 
 			duration := time.Since(start)
+
 			event := modules.Logger().Info()
 
 			if rec.StatusCode != http.StatusOK {

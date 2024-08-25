@@ -57,13 +57,8 @@ func main() {
 	defer cancel()
 	wg, ctx := errgroup.WithContext(ctx)
 
-	// NOTE: http server address
-	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
-
-	redirect := fmt.Sprintf("http://%s", address)
-
 	// initializing sessions manager using redis backed
-	oauth := oauth.NewOAuth(redirect, config, logr)
+	oauth := oauth.NewOAuth(config, logr)
 	if err = oauth.InitializeRedisStore(config.RedisURLShort, config.AuthTokenSecret); err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize redis store")
 	}
@@ -112,6 +107,7 @@ func main() {
 
 	server := api.NewServer(modules)
 
+	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	server.StartServer(address, ctx, wg)
 
 	err = wg.Wait()

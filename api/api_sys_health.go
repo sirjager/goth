@@ -34,7 +34,7 @@ func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 		Uptime:    time.Since(s.Config().StartTime).String(),
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		s.Logger().Error().Err(err).Msg("failed to encode health response")

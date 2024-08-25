@@ -5,16 +5,19 @@ import (
 	"net/http"
 
 	"github.com/MarceloPetrucio/go-scalar-api-reference"
+	"github.com/sirjager/gopkg/httpx"
+
+	_ "github.com/sirjager/goth/statik"
 )
 
 // @Summary	Documentation
 // @Tags		System
 // @Produce	html
 // @Success	200	{string}	string	"HTML content"
-// @Router		/swagger [get]
+// @Router		/docs [get]
 func (s *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
 	htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
-		SpecURL:            s.Config().DocsSpecURL,
+		SpecURL:            fmt.Sprintf("http://localhost:%d/docs/swagger.json", s.Config().Port),
 		HideDownloadButton: true,
 		DarkMode:           true,
 		ShowSidebar:        true,
@@ -25,11 +28,11 @@ func (s *Server) SwaggerDocs(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		httpx.Error(w, err)
 		return
 	}
 
-	w.Header().Add("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
 	if _, writeErr := w.Write([]byte(htmlContent)); writeErr != nil {
 		http.Error(w, writeErr.Error(), 500)

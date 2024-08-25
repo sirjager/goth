@@ -1,10 +1,14 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/rakyll/statik/fs"
 
 	mw "github.com/sirjager/goth/middlewares"
+	_ "github.com/sirjager/goth/statik"
 )
 
 func (s *Server) MountHandlers() {
@@ -13,14 +17,14 @@ func (s *Server) MountHandlers() {
 
 	c.Use(middleware.RealIP)
 	c.Use(mw.UseCors())
-	c.Use(mw.RequestID())
 	c.Use(mw.Logger(s.Modules))
 	c.Use(middleware.Compress(5))
 	c.Use(middleware.Recoverer)
+	c.Use(mw.RequestID(s.Modules))
 
 	c.Get("/", s.Welcome)
 	c.Get("/health", s.Health)
-	c.Get("/swagger", s.SwaggerDocs)
+	c.Get(docsPath, s.SwaggerDocs)
 
 	// NOTE: Authentication routes
 	c.Route("/auth", func(r chi.Router) {
@@ -57,5 +61,16 @@ func (s *Server) MountHandlers() {
 
 		r.Get("/", s.UserGet)
 		r.Patch("/", s.UserUpdate)
+	})
+
+	// file server for swagger documentations, it serves only swagger.json
+	// that will be used by scalar docs
+	statikFS, err := fs.New()
+	if err != nil {
+		s.Logger().Fatal().Err(err).Msg("can not statik file server")
+	}
+	swaggerHandler := http.StripPrefix("/docs/", http.FileServer(statikFS))
+	c.Get("/docs/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+		swaggerHandler.ServeHTTP(w, r)
 	})
 }

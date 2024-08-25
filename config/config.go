@@ -15,7 +15,7 @@ type Config struct {
 	StartTime time.Time `validate:"required"`
 
 	// Host denotes the host address where the API service is running.
-	Host string `mapstructure:"HOST" validate:"required,hostname"`
+	Host string `mapstructure:"HOST" validate:"required"`
 
 	// Port specifies the port number on which the API service will listen.
 	Port int `mapstructure:"PORT" validate:"required,number"`
@@ -25,9 +25,6 @@ type Config struct {
 
 	// ServerName is alphanum name that identifies the specific instance of the service, distinguishing it from other instances.
 	ServerName string `mapstructure:"SERVER_NAME" validate:"required,alphanum"`
-
-	// DocsSpecURL is the file path to the Swagger-generated JSON file for API documentation.
-	DocsSpecURL string `validate:"required"`
 
 	// PostgresURL is the connection string for the PostgreSQL database used by the service.
 	PostgresURL string `mapstructure:"POSTGRES_URL" validate:"required"`

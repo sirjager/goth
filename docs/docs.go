@@ -333,6 +333,25 @@ const docTemplate = `{
                 }
             }
         },
+        "/docs": {
+            "get": {
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Documentation",
+                "responses": {
+                    "200": {
+                        "description": "HTML content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Health Check",
@@ -351,25 +370,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/HealthResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/swagger": {
-            "get": {
-                "produces": [
-                    "text/html"
-                ],
-                "tags": [
-                    "System"
-                ],
-                "summary": "Documentation",
-                "responses": {
-                    "200": {
-                        "description": "HTML content",
-                        "schema": {
-                            "type": "string"
                         }
                     }
                 }

@@ -33,9 +33,6 @@ func LoadConfigs(path string, name string, env ...string) *Config {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to get hostname")
 	}
-	if config.Host == "" {
-		config.Host = "localhost"
-	}
 
 	// Construct the DBUrl using the DBConfig values.
 	if config.ServerName == "" {
@@ -48,8 +45,6 @@ func LoadConfigs(path string, name string, env ...string) *Config {
 	}
 	config.RedisOptions = redisOptions
 	config.RedisURLShort = strings.Split(config.RedisURL, "@")[1]
-
-	config.DocsSpecURL = path + "/docs/swagger.json"
 
 	config.GoEnv = utils.GetFirstOrFallback("dev", env...)
 

@@ -28,7 +28,8 @@ tasks:
     desc: Generate swagger docs
     cmds:
       - swag fmt
-      - swag init --outputTypes go,json
+      - swag init --outputTypes go,json --output {{.DOCS_SWAGGER}}
+      - statik -src={{.DOCS_SWAGGER}} -dest={{.STATIK_DIR}} -f
 
   tidy:
     desc: run go mod tidy

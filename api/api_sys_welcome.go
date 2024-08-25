@@ -15,7 +15,7 @@ func welcomeMessaage(serviceName string) string {
 	return fmt.Sprintf("Welcome to %s", serviceName)
 }
 
-const docsPath = "/swagger"
+const docsPath = "/docs"
 
 // Welcome Docs
 //
@@ -32,7 +32,7 @@ func (s *Server) Welcome(w http.ResponseWriter, r *http.Request) {
 		Docs:    docsPath,
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		s.Logger().Error().Err(err).Msg("failed to encode welcome response")

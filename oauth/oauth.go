@@ -22,7 +22,8 @@ type OAuth struct {
 	redirect string
 }
 
-func NewOAuth(redirect string, config *config.Config, logr zerolog.Logger) *OAuth {
+func NewOAuth(config *config.Config, logr zerolog.Logger) *OAuth {
+	redirect := fmt.Sprintf("http://%s:%d", config.Host, config.Port)
 	return &OAuth{
 		config:   config,
 		logr:     logr,
