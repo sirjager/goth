@@ -34,9 +34,9 @@ var interuptSignals = []os.Signal{
 	syscall.SIGINT,
 }
 
-//	@title			OAuthAPI
+//	@title			Goth
 //	@version		0.1.0
-//	@description	OAuth API for 3rd party authentication
+//	@description	Goth is a robust authentication API that supports both OAuth providers and traditional credentials-based authentication. It is designed to provide secure and flexible user authentication for various applications.
 
 //	@contact.name				Ankur Kumar
 //	@contact.url				https://github.com/sirjager

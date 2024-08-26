@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "OAuth API for 3rd party authentication",
-        "title": "OAuthAPI",
+        "description": "Goth is a robust authentication API that supports both OAuth providers and traditional credentials-based authentication. It is designed to provide secure and flexible user authentication for various applications.",
+        "title": "Goth",
         "contact": {
             "name": "Ankur Kumar",
             "url": "https://github.com/sirjager"
