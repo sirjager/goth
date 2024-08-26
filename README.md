@@ -26,6 +26,11 @@ It is designed to provide secure and flexible user authentication for various ap
 - **Basic Authentication:** Used to secure sensitive endpoints such as sign-in.
 - **Token-Based Authentication:** Manages user sessions securely using access and refresh tokens.
 
+
+## Documentation
+
+For detailed API documentation, visit: [sirjager-goth.apidocumentation.com](https://sirjager-goth.apidocumentation.com)
+
 ## Contact
 
 For any inquiries or support, please contact:
