@@ -5,6 +5,9 @@
 
 ---
 
+
+![Interactive Documentations](assets/docs.png)
+
 ## Overview
 
 Goth API is a robust authentication API that supports both OAuth providers and traditional credentials-based authentication.
