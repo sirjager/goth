@@ -15,6 +15,26 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+        options: >-
+          --health-cmd="pg_isready -U testuser" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,4 +48,8 @@ jobs:
         run: go mod tidy
 
       - name: Run tests
+        env:
+          GO_ENV: "testing"
+          POSTGRES_URL: postgres://testdb:testpassword@localhost:5432/testdb?sslmode=disable
+          REDIS_URL: redis://default:@localhost:6379
         run: go test -v ./...

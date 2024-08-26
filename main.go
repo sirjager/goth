@@ -60,6 +60,7 @@ func main() {
 	// initializing sessions manager using redis backed
 	oauth := oauth.NewOAuth(config, logr)
 	if err = oauth.InitializeRedisStore(config.RedisURLShort, config.AuthTokenSecret); err != nil {
+		fmt.Println("i am here")
 		log.Fatal().Err(err).Msg("failed to initialize redis store")
 	}
 	defer oauth.Close(ctx, wg)
