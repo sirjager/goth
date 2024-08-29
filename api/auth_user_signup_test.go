@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/sirjager/goth/core"
 	"github.com/sirjager/goth/entity"
-	"github.com/sirjager/goth/modules"
 	repoerrors "github.com/sirjager/goth/repository/errors"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	"github.com/sirjager/goth/repository/users"
@@ -29,12 +29,12 @@ func TestSignup(t *testing.T) {
 	testCases := []struct {
 		check func(t *testing.T, recorder *httptest.ResponseRecorder)
 		stubs func(repo *mockRepo.MockRepo)
-		body  SignUpRequestParams
+		body  signupReqParams
 		name  string
 	}{
 		{
 			name: "OK",
-			body: SignUpRequestParams{
+			body: signupReqParams{
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
@@ -70,7 +70,7 @@ func TestSignup(t *testing.T) {
 		},
 		{
 			name: "InvalidEmail",
-			body: SignUpRequestParams{
+			body: signupReqParams{
 				Email:    "galat-email-daal-deta-hu-kya-he-pata-$chalega@gmail.com",
 				Password: password.Value(),
 			},
@@ -84,7 +84,7 @@ func TestSignup(t *testing.T) {
 		},
 		{
 			name: "InvalidPassword",
-			body: SignUpRequestParams{
+			body: signupReqParams{
 				Email:    user.User.Email,
 				Password: "missing-1-symbol-and-uppercase",
 			},
@@ -98,7 +98,7 @@ func TestSignup(t *testing.T) {
 		},
 		{
 			name: "AlreadyExists",
-			body: SignUpRequestParams{
+			body: signupReqParams{
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
@@ -122,7 +122,7 @@ func TestSignup(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			body: SignUpRequestParams{
+			body: signupReqParams{
 				Email:    user.User.Email,
 				Password: password.Value(),
 			},
@@ -155,20 +155,12 @@ func TestSignup(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			adapters := modules.NewModules(
-				testConfig,
-				testLogr,
-				testCache,
-				repo,
-				testTokens,
-				testMail,
-				testTasks,
-			)
-			server := NewServer(adapters)
+			app := core.NewCoreApp(testConfig, testLogr, testCache, repo, testTokens, testMail, testTasks)
+			server := NewServer(app)
 
 			recoder := httptest.NewRecorder()
 
-			request, err := http.NewRequest(http.MethodPost, "/auth/signup", bytes.NewReader(data))
+			request, err := http.NewRequest(http.MethodPost, "/api/auth/signup", bytes.NewReader(data))
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recoder, request)

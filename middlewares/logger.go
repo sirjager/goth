@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/sirjager/goth/modules"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -35,7 +36,7 @@ func (rec *ResponseRecorder) Write(b []byte) (int, error) {
 	return rec.ResponseWriter.Write(b)
 }
 
-func Logger(modules *modules.Modules) func(next http.Handler) http.Handler {
+func Logger(logr zerolog.Logger, logfile ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now() // Start timer
@@ -46,20 +47,20 @@ func Logger(modules *modules.Modules) func(next http.Handler) http.Handler {
 
 			duration := time.Since(start)
 
-			event := modules.Logger().Info()
+			event := logr.Info()
 
 			if rec.StatusCode != http.StatusOK {
 				var data map[string]interface{}
 				if err := json.Unmarshal(rec.Body.Bytes(), &data); err != nil {
 					data = map[string]interface{}{}
 				}
-				event = modules.Logger().Error().Interface("error", data["message"])
+				event = logr.Error().Interface("error", data["message"])
 			}
 
 			if rec.StatusCode >= 400 && rec.StatusCode < 500 {
-				event = modules.Logger().Warn()
+				event = logr.Warn()
 			} else if rec.StatusCode >= 500 {
-				event = modules.Logger().Error()
+				event = logr.Error()
 			}
 
 			shortenedPath := shortenPath(path, 20)
@@ -72,10 +73,10 @@ func Logger(modules *modules.Modules) func(next http.Handler) http.Handler {
 				Dur("latency", duration).
 				Int("code", rec.StatusCode)
 
-			if modules.Config().LoggerLogfile != "" {
+			if len(logfile) > 0 && logfile[0] != "" {
 				event.Msg(icon)
 			} else {
-				goEnv := modules.Config().GoEnv
+				goEnv := os.Getenv("GO_ENV")
 				if strings.Contains(goEnv, "test") || strings.Contains(goEnv, "prod") {
 					event.Msg(icon)
 				} else {

@@ -11,32 +11,32 @@ import (
 	"go.uber.org/mock/gomock"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
-	"github.com/sirjager/goth/modules"
+	"github.com/sirjager/goth/core"
 	mockRepo "github.com/sirjager/goth/repository/mock"
 	mockTask "github.com/sirjager/goth/worker/mock"
 )
 
 func TestHealth(t *testing.T) {
 	testCases := []struct {
-		check    func(t *testing.T, recorder *httptest.ResponseRecorder, expected healthResponse)
-		expected healthResponse
+		check    func(t *testing.T, recorder *httptest.ResponseRecorder, expected HealthResponse)
+		expected HealthResponse
 		name     string
 	}{
 		{
 			name: "OK",
-			expected: healthResponse{
+			expected: HealthResponse{
 				Service: testConfig.ServiceName,
 				Server:  testConfig.ServerName,
 				Status:  healthpb.HealthCheckResponse_SERVING.String(),
 				Started: testConfig.StartTime,
 			},
-			check: func(t *testing.T, recorder *httptest.ResponseRecorder, expected healthResponse) {
+			check: func(t *testing.T, recorder *httptest.ResponseRecorder, expected HealthResponse) {
 				require.Equal(t, http.StatusOK, recorder.Code)
 
 				data, err := io.ReadAll(recorder.Body)
 				require.NoError(t, err)
 
-				var response healthResponse
+				var response HealthResponse
 				err = json.Unmarshal(data, &response)
 				require.NoError(t, err)
 
@@ -56,12 +56,12 @@ func TestHealth(t *testing.T) {
 			repo := mockRepo.NewMockRepo(ctrl)
 			testTasks := mockTask.NewMockTaskDistributor(ctrl)
 
-			adapters := modules.NewModules(testConfig, testLogr, testCache, repo, testTokens, testMail, testTasks)
-			server := NewServer(adapters)
+			app := core.NewCoreApp(testConfig, testLogr, testCache, repo, testTokens, testMail, testTasks)
+			server := NewServer(app)
 
 			recoder := httptest.NewRecorder()
 
-			request, err := http.NewRequest(http.MethodGet, "/health", nil)
+			request, err := http.NewRequest(http.MethodGet, "/api/health", nil)
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recoder, request)

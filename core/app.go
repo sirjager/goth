@@ -1,4 +1,4 @@
-package modules
+package core
 
 import (
 	"github.com/go-playground/validator/v10"
@@ -12,8 +12,8 @@ import (
 	"github.com/sirjager/goth/worker"
 )
 
-// Modules holds the core components for the server.
-type Modules struct {
+// App holds the core components for the server.
+type App struct {
 	logger          zerolog.Logger         // Logger for logging information.
 	cache           cache.Cache            // Cache for storing and retrieving data.
 	tokenBuilder    tokens.TokenBuilder    // TokenBuilder for generating and managing tokens.
@@ -24,8 +24,7 @@ type Modules struct {
 	taskDistrubutor worker.TaskDistributor // TaskDistributor for distributing tasks.
 }
 
-// NewModules creates a new instance of Modules with the provided components.
-func NewModules(
+func NewCoreApp(
 	configs *config.Config, // Configuration settings.
 	logger zerolog.Logger, // Logger instance.
 	cache cache.Cache, // Cache instance.
@@ -33,56 +32,58 @@ func NewModules(
 	tokenBuilder tokens.TokenBuilder, // TokenBuilder instance.
 	mailSender mail.Sender, // MailSender instance.
 	taskDistributor worker.TaskDistributor, // TaskDistributor instance.
-) *Modules {
-	validator := validator.New(validator.WithRequiredStructEnabled()) // Create a new validator.
-	return &Modules{
+
+) *App {
+	_validator := validator.New(validator.WithRequiredStructEnabled()) // Create a new validator.
+	return &App{
 		logger:          logger,
 		cache:           cache,
 		tokenBuilder:    tokenBuilder,
 		repository:      repository,
-		validator:       validator,
+		validator:       _validator,
 		configs:         configs,
 		mailSender:      mailSender,
 		taskDistrubutor: taskDistributor,
 	}
+
 }
 
 // Logger returns the logger instance.
-func (m *Modules) Logger() *zerolog.Logger {
+func (m *App) Logger() *zerolog.Logger {
 	return &m.logger
 }
 
 // Cache returns the cache instance.
-func (m *Modules) Cache() cache.Cache {
+func (m *App) Cache() cache.Cache {
 	return m.cache
 }
 
 // Mailer returns the mail sender instance.
-func (m *Modules) Mailer() mail.Sender {
+func (m *App) Mailer() mail.Sender {
 	return m.mailSender
 }
 
 // Tokens returns the token builder instance.
-func (m *Modules) Tokens() tokens.TokenBuilder {
+func (m *App) Tokens() tokens.TokenBuilder {
 	return m.tokenBuilder
 }
 
 // Repo returns the repository instance.
-func (m *Modules) Repo() repository.Repo {
+func (m *App) Repo() repository.Repo {
 	return m.repository
 }
 
 // Validator returns the validator instance.
-func (m *Modules) Validator() *validator.Validate {
+func (m *App) Validator() *validator.Validate {
 	return m.validator
 }
 
 // Config returns the configuration settings.
-func (m *Modules) Config() *config.Config {
+func (m *App) Config() *config.Config {
 	return m.configs
 }
 
 // Tasks returns the task distributor instance.
-func (m *Modules) Tasks() worker.TaskDistributor {
+func (m *App) Tasks() worker.TaskDistributor {
 	return m.taskDistrubutor
 }

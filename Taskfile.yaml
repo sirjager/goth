@@ -11,10 +11,8 @@ vars:
   REPOSITORY: goth
   USER_REPO: "repository/users/migrations"
   POSTGRES_MIGRATIONS: "repository/users/migrations"
-  STUBS_DIR: rpc
-  PROTO_DIR: proto
-  STATIK_DIR: .
-  DOCS_SWAGGER: docs
+  STATIK_DIR: statik
+  SWAGGER_DOCS: docs
 
 tasks:
   sqlc:
@@ -24,12 +22,14 @@ tasks:
       - sqlc generate
       - task: migration-build
 
+
   swag:
     desc: Generate swagger docs
     cmds:
       - swag fmt
-      - swag init --outputTypes go,json --output {{.DOCS_SWAGGER}}
-      - statik -src={{.DOCS_SWAGGER}} -dest={{.STATIK_DIR}} -f
+      - swag init --outputTypes go,json --output ./{{.SWAGGER_DOCS}}
+      - statik -src=./{{.SWAGGER_DOCS}} -dest=./{{.STATIK_DIR}} -ns={{.SWAGGER_DOCS}} -p={{.SWAGGER_DOCS}} -f
+
 
   tidy:
     desc: run go mod tidy

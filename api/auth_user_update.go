@@ -12,26 +12,26 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-// @Summary		User
-// @Description	Get Authenticated User
-// @Tags			Auth
-// @Produce		json
-// @Success		200	{object}	UserResponse	"UserResponse"
-// @Router			/auth/user [get]
-func (s *Server) AuthUser(w http.ResponseWriter, r *http.Request) {
-	user := mw.UserOrPanic(r)
-	response := UserResponse{user.Profile()}
-	httpx.Success(w, response)
-}
+type UpdateUserParams struct {
+	Username        string `json:"username,omitempty"`
+	FirstName       string `json:"firstName,omitempty"`
+	LastName        string `json:"lastName,omitempty"`
+	FullName        string `json:"fullName,omitempty"`
+	PictureURL      string `json:"pictureURL,omitempty"`
+	NewPassword     string `json:"newPassword,omitempty"`
+	CurrentPassword string `json:"currentPassword,omitempty"`
+} //	@name	UpdateUserParams
 
-// @Summary		User
-// @Description	Update Authenticated User
-// @Tags			Auth
-// @Produce		json
-// @Router			/auth/user [patch]
-// @Param			body	body		UpdateUserParams	true	"Update User Params"
-// @Success		200		{object}	UserResponse		"UserResponse"
-func (s *Server) AuthUserPatch(w http.ResponseWriter, r *http.Request) {
+// Authenticated Route for partially updating user
+//
+//	@Summary		Update User
+//	@Description	Partially Update User
+//	@Tags			Auth
+//	@Produce		json
+//	@Param			body	body	UpdateUserParams	true	"Update User Params"
+//	@Router			/api/auth/user [patch]
+//	@Success		200	{object}	UserResponse	"UserResponse"
+func (s *Server) authUserUpdate(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	var params UpdateUserParams
 	if err := s.ParseAndValidate(r, &params); err != nil {

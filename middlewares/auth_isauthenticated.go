@@ -8,13 +8,13 @@ import (
 	"github.com/sirjager/gopkg/tokens"
 
 	"github.com/sirjager/goth/entity"
-	"github.com/sirjager/goth/modules"
+	"github.com/sirjager/goth/core"
 	"github.com/sirjager/goth/payload"
 	"github.com/sirjager/goth/vo"
 )
 
-func IsAuthenticated(r *http.Request, modules *modules.Modules) (*entity.User, bool) {
-	user, _, err := getAuthenticatedUser(r, modules, CookieAccessToken)
+func IsAuthenticated(r *http.Request, app *core.App) (*entity.User, bool) {
+	user, _, err := getAuthenticatedUser(r, app, CookieAccessToken)
 	if err != nil || user == nil {
 		return nil, false
 	}
@@ -26,7 +26,7 @@ func IsAuthenticated(r *http.Request, modules *modules.Modules) (*entity.User, b
 
 func getAuthenticatedUser(
 	r *http.Request,
-	modules *modules.Modules,
+	modules *core.App,
 	cookieName string,
 ) (*entity.User, int, error) {
 	ctx := r.Context()

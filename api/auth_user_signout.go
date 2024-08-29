@@ -8,14 +8,15 @@ import (
 
 	mw "github.com/sirjager/goth/middlewares"
 )
-
-// @Summary		Signout
-// @Description	Signout from a provider
+// Authenticated route for signing out current user
+//
+// @Summary		SignOut User
+// @Description	Signout session(s) or a provider
 // @Tags			Auth
 // @Produce		json
 // @Param			provider	path	string	true	"Provider Name"
-// @Router			/auth/signout/{provider} [get]
-func (a *Server) Signout(w http.ResponseWriter, r *http.Request) {
+// @Router			/api/auth/signout/{provider} [get]
+func (a *Server) authUserSignOut(w http.ResponseWriter, r *http.Request) {
 	// INFO: Clear Cookies
 	a.SetCookies(w,
 		&http.Cookie{

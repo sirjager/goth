@@ -24,18 +24,18 @@ type SignInResponse struct {
 
 var errInvalidCredentials = errors.New("invalid credentials")
 
-// Signin Request
+// Route for signing in registered user
 //
-//	@Summary		Signin
-//	@Description	Signin using credentials
+//	@Summary		SignIn User
+//	@Description	SignIn using credentials
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/signin [get]
+//	@Router			/api/auth/signin [get]
 //	@Security		BasicAuth
 //	@Param			user	query		bool			false	"If true, returns User in body"
 //	@Success		200		{object}	SignInResponse	"SignInResponse"
-func (s *Server) Signin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authUserSignIn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	identity, _password, ok := r.BasicAuth()
 	if !ok {

@@ -9,7 +9,7 @@ import (
 	"github.com/sirjager/gopkg/httpx"
 
 	"github.com/sirjager/goth/entity"
-	"github.com/sirjager/goth/modules"
+	"github.com/sirjager/goth/core"
 )
 
 type (
@@ -33,11 +33,11 @@ const (
 )
 
 // RequiresAccessToken authenticates the request and adds the user to the context
-func RequiresAccessToken(modules *modules.Modules) func(next http.Handler) http.Handler {
+func RequiresAccessToken(app *core.App) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			user, status, err := getAuthenticatedUser(r, modules, CookieAccessToken)
+			user, status, err := getAuthenticatedUser(r, app, CookieAccessToken)
 			if err != nil {
 				httpx.Error(w, err, status)
 				return
@@ -49,11 +49,11 @@ func RequiresAccessToken(modules *modules.Modules) func(next http.Handler) http.
 }
 
 // RequiresRefreshToken authenticates the request and adds the user to the context
-func RequiresRefreshToken(modules *modules.Modules) func(next http.Handler) http.Handler {
+func RequiresRefreshToken(app *core.App) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			user, status, err := getAuthenticatedUser(r, modules, CookieRefreshToken)
+			user, status, err := getAuthenticatedUser(r, app, CookieRefreshToken)
 			if err != nil {
 				httpx.Error(w, err, status)
 				return
@@ -69,6 +69,15 @@ func UserOrPanic(r *http.Request) *entity.User {
 	user, ok := r.Context().Value(ContextKeyUser).(*entity.User)
 	if !ok || user == nil || user.Email.Value() == "" {
 		panic("authenticated operation, must have valid user")
+	}
+	return user
+}
+
+// AdminOrPanic assert that the user is a admin/master
+func AdminOrPanic(r *http.Request) *entity.User {
+	user := UserOrPanic(r)
+	if !user.Master {
+		panic("admin operation, must be a admin user")
 	}
 	return user
 }

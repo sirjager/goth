@@ -12,14 +12,46 @@ import (
 	mw "github.com/sirjager/goth/middlewares"
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/vo"
+
+	"net/url"
 )
 
-func (s *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
+// OAuth Provider
+//
+//	@Summary		OAuth Provider
+//	@Description	Authenticates a user with a specified oauth provider
+//	@Tags			Auth
+//	@Produce		json
+//	@Router			/api/auth/{provider} [get]
+//	@Param			provider	path		string			true	"OAuth provider name [google,github]"	Enums(google, github)
+//	@Success		200			{object}	UserResponse	"User object"
+func (a *Server) oauthProvider(w http.ResponseWriter, r *http.Request) {
+	refererURL := r.Header.Get("Referer")
+	parsedURL, err := url.Parse(refererURL)
+	if err != nil {
+		http.Error(w, "invalid refer url", http.StatusBadRequest)
+		return
+	}
+	// Reconstruct the base URL
+	refererURL = parsedURL.Scheme + "://" + parsedURL.Host
+	provider := chi.URLParam(r, "provider")
+	if user, authenticated := mw.IsAuthenticated(r, a.App); authenticated {
+		response := UserResponse{User: user.Profile()}
+		httpx.Success(w, response)
+		return
+	}
+	req := r.WithContext(context.WithValue(r.Context(), "provider", provider))
+	gothic.SetState = func(req *http.Request) string {
+		return refererURL
+	}
+	gothic.BeginAuthHandler(w, req)
+}
+
+func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 	redirectURL := gothic.GetState(r) // set by AuthProvider, original url of calling client
 
 	provider := chi.URLParam(r, "provider")
 	req := r.WithContext(context.WithValue(r.Context(), "provider", provider))
-
 	gothUser, err := gothic.CompleteUserAuth(w, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -29,9 +61,7 @@ func (s *Server) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// NOTE: saving user in database
 	// IF EXISTS      : fetch from database using email, and return it
 	// IF NOT EXISTS  : create and save user object, and return it
-
 	newUser := GothUserToEntityUser(gothUser)
-
 	// If master user does not exists, we make newUser a Master User.
 	exists, existsErr := masterUserExists(r.Context(), s.Repo())
 	if existsErr != nil {

@@ -8,24 +8,26 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-type healthResponse struct {
+type HealthResponse struct {
 	Timestamp time.Time `json:"timestamp,omitempty"`
 	Started   time.Time `json:"started,omitempty"`
 	Service   string    `json:"service,omitempty"`
 	Server    string    `json:"server,omitempty"`
 	Status    string    `json:"status,omitempty"`
 	Uptime    string    `json:"uptime,omitempty"`
-} // @name HealthResponse
+} //	@name	HealthResponse
 
-// @Summary		Health
-// @Description	Health Check
-// @Tags			System
-// @Accept			json
-// @Produce		json
-// @Router			/health [get]
-// @Success		200	{object}	healthResponse
-func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
-	response := healthResponse{
+// API Health Route
+//
+//	@Summary		Health
+//	@Description	Api Health Check
+//	@Tags			System
+//	@Accept			json
+//	@Produce		json
+//	@Router			/api/health [get]
+//	@Success		200	{object}	HealthResponse
+func (s *Server) apiHealth(w http.ResponseWriter, r *http.Request) {
+	response := HealthResponse{
 		Timestamp: time.Now(),
 		Service:   s.Config().ServiceName,
 		Server:    s.Config().ServerName,

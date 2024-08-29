@@ -18,9 +18,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/": {
+        "/api": {
             "get": {
-                "description": "Welcome",
+                "description": "Welcome message",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,7 +41,79 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/refresh": {
+        "/api/admin/user/{identity}": {
+            "patch": {
+                "description": "Partially Update User",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update User",
+                "parameters": [
+                    {
+                        "description": "Update User Params",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateUserParams"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identity can either be email or id",
+                        "name": "identity",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "UserResponse",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/users": {
+            "get": {
+                "description": "Fetch multiple users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Fetch Users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number: Default 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Per Page: Default 100",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "UsersResponse",
+                        "schema": {
+                            "$ref": "#/definitions/UsersResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh": {
             "get": {
                 "description": "Refreshes Access Token",
                 "consumes": [
@@ -53,7 +125,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Refresh",
+                "summary": "Refresh Token",
                 "parameters": [
                     {
                         "type": "boolean",
@@ -72,9 +144,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/reset": {
+        "/api/auth/reset": {
             "post": {
-                "description": "Reset Password",
+                "description": "Reset password with a verified email email",
                 "consumes": [
                     "application/json"
                 ],
@@ -84,7 +156,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Reset",
+                "summary": "Reset Password",
                 "parameters": [
                     {
                         "description": "ResetPasswordParams",
@@ -99,14 +171,14 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/auth/signin": {
+        "/api/auth/signin": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Signin using credentials",
+                "description": "SignIn using credentials",
                 "consumes": [
                     "application/json"
                 ],
@@ -116,7 +188,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Signin",
+                "summary": "SignIn User",
                 "parameters": [
                     {
                         "type": "boolean",
@@ -135,16 +207,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/signout/{provider}": {
+        "/api/auth/signout/{provider}": {
             "get": {
-                "description": "Signout from a provider",
+                "description": "Signout session(s) or a provider",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Signout",
+                "summary": "SignOut User",
                 "parameters": [
                     {
                         "type": "string",
@@ -157,9 +229,9 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/auth/signup": {
+        "/api/auth/signup": {
             "post": {
-                "description": "Signup using email and password",
+                "description": "Sign up a new user using email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -169,10 +241,10 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Signup",
+                "summary": "SignUp User",
                 "parameters": [
                     {
-                        "description": "Signup request params",
+                        "description": "sign up params : email and password",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -191,7 +263,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/user": {
+        "/api/auth/user": {
             "get": {
                 "description": "Get Authenticated User",
                 "produces": [
@@ -200,7 +272,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "User",
+                "summary": "User Fetch",
                 "responses": {
                     "200": {
                         "description": "UserResponse",
@@ -221,7 +293,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Delete",
+                "summary": "User Delete",
                 "parameters": [
                     {
                         "type": "string",
@@ -233,14 +305,14 @@ const docTemplate = `{
                 "responses": {}
             },
             "patch": {
-                "description": "Update Authenticated User",
+                "description": "Partially Update User",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "User",
+                "summary": "Update User",
                 "parameters": [
                     {
                         "description": "Update User Params",
@@ -262,7 +334,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/verify": {
+        "/api/auth/verify": {
             "get": {
                 "description": "Email Verification",
                 "consumes": [
@@ -274,7 +346,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Verify",
+                "summary": "Verify Email",
                 "parameters": [
                     {
                         "type": "string",
@@ -300,7 +372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/{provider}": {
+        "/api/auth/{provider}": {
             "get": {
                 "description": "Authenticates a user with a specified oauth provider",
                 "produces": [
@@ -309,7 +381,7 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "OAuth",
+                "summary": "OAuth Provider",
                 "parameters": [
                     {
                         "enum": [
@@ -333,7 +405,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/docs": {
+        "/api/docs": {
             "get": {
                 "produces": [
                     "text/html"
@@ -352,9 +424,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
+        "/api/health": {
             "get": {
-                "description": "Health Check",
+                "description": "Api Health Check",
                 "consumes": [
                     "application/json"
                 ],
@@ -370,105 +442,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/HealthResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/users": {
-            "get": {
-                "description": "Fetch multiple users",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Resources"
-                ],
-                "summary": "Multiple Users",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page number: Default 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Per Page: Default 100",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "UsersResponse",
-                        "schema": {
-                            "$ref": "#/definitions/UsersResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{identity}": {
-            "get": {
-                "description": "Fetch specific user",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Resources"
-                ],
-                "summary": "Single User",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Identity can either be email or id",
-                        "name": "identity",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "UserResponse",
-                        "schema": {
-                            "$ref": "#/definitions/UserResponse"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "description": "Partially Update User",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Resources"
-                ],
-                "summary": "Update User",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Identity can either be email or id",
-                        "name": "identity",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update User Params",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/UpdateUserParams"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "UserResponse",
-                        "schema": {
-                            "$ref": "#/definitions/UserResponse"
                         }
                     }
                 }

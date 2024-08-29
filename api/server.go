@@ -8,16 +8,16 @@ import (
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sirjager/goth/modules"
+	"github.com/sirjager/goth/core"
 )
 
 type Server struct {
 	router *chi.Mux
-	*modules.Modules
+	*core.App
 }
 
-func NewServer(modules *modules.Modules) *Server {
-	server := &Server{Modules: modules}
+func NewServer(app *core.App) *Server {
+	server := &Server{App: app}
 	server.MountHandlers()
 	return server
 }
@@ -25,7 +25,7 @@ func NewServer(modules *modules.Modules) *Server {
 func (server *Server) StartServer(address string, ctx context.Context, wg *errgroup.Group) {
 	httpServer := &http.Server{Handler: server.router, Addr: address}
 	wg.Go(func() error {
-		server.Logger().Info().Msgf("started http server at %s", address)
+		server.Logger().Info().Msgf("serving api at http://%s/api", address)
 		if err := httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				server.Logger().Error().Err(err).Msg("failed to start http server")

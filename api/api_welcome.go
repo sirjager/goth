@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-type welcomeResponse struct {
+type WelcomResponse struct {
 	Message string `json:"message,omitempty"`
 	Docs    string `json:"docs,omitempty"`
 } // @name WelcomeResponse
@@ -15,21 +15,19 @@ func welcomeMessaage(serviceName string) string {
 	return fmt.Sprintf("Welcome to %s", serviceName)
 }
 
-const docsPath = "/docs"
-
-// Welcome Docs
+// Welcome message
 //
 //	@Summary		Welcome
-//	@Description	Welcome
+//	@Description	Welcome message
 //	@Tags			System
 //	@Accept			json
 //	@Produce		json
-//	@Router			/ [get]
-//	@Success		200	{object}	welcomeResponse
-func (s *Server) Welcome(w http.ResponseWriter, r *http.Request) {
-	response := welcomeResponse{
+//	@Router			/api [get]
+//	@Success		200	{object}	WelcomeResponse
+func (s *Server) apiWelcome(w http.ResponseWriter, r *http.Request) {
+	response := WelcomResponse{
 		Message: welcomeMessaage(s.Config().ServiceName),
-		Docs:    docsPath,
+		Docs:    "/api/docs",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

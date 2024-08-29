@@ -20,15 +20,15 @@ type RefreshTokenResponse struct {
 
 // Refresh Tokens
 //
-//	@Summary		Refresh
+//	@Summary		Refresh Token
 //	@Description	Refreshes Access Token
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/refresh [get]
+//	@Router			/api/auth/refresh [get]
 //	@Param			user	query		bool					false	"If true, returns User in body"
 //	@Success		200		{object}	RefreshTokenResponse	"RefreshTokenResponse"
-func (s *Server) RefreshToken(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authUserRefreshToken(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 	sessionID := utils.XIDNew().String()
 	accessData := payload.NewAccessPayload(user, sessionID)

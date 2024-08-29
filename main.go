@@ -18,8 +18,8 @@ import (
 
 	"github.com/sirjager/goth/api"
 	"github.com/sirjager/goth/config"
+	"github.com/sirjager/goth/core"
 	"github.com/sirjager/goth/logger"
-	"github.com/sirjager/goth/modules"
 	"github.com/sirjager/goth/oauth"
 	"github.com/sirjager/goth/repository"
 	"github.com/sirjager/goth/worker"
@@ -103,10 +103,10 @@ func main() {
 	tasks := worker.NewTaskDistributor(logr, config.RedisOptions)
 	defer tasks.Shutdown()
 
-	modules := modules.NewModules(config, logr, cache, repo, tokens, mail, tasks)
+	app := core.NewCoreApp(config, logr, cache, repo, tokens, mail, tasks)
 	worker.RunTaskProcessor(ctx, wg, logr, repo, mail, cache, tokens, config)
 
-	server := api.NewServer(modules)
+	server := api.NewServer(app)
 
 	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	server.StartServer(address, ctx, wg)

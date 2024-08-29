@@ -9,23 +9,23 @@ import (
 	"github.com/sirjager/goth/vo"
 )
 
-type SignUpRequestParams struct {
+type signupReqParams struct {
 	Email    string `json:"email,omitempty"    validate:"required,gte=3"`
 	Password string `json:"password,omitempty" validate:"required"`
 } // @name SignUpRequestParams
 
-// Signup Request
+// Route for signing up a new user
 //
-//	@Summary		Signup
-//	@Description	Signup using email and password
+//	@Summary		SignUp User
+//	@Description	Sign up a new user using email and password
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/signup [post]
-//	@Param			body	body		SignUpRequestParams	true	"Signup request params"
+//	@Router			/api/auth/signup [post]
+//	@Param			body	body		SignUpRequestParams	true	"sign up params : email and password"
 //	@Success		201		{object}	UserResponse		"User object"
-func (s *Server) Signup(w http.ResponseWriter, r *http.Request) {
-	var params SignUpRequestParams
+func (s *Server) authUserSignUp(w http.ResponseWriter, r *http.Request) {
+	var params signupReqParams
 	if err := s.ParseAndValidate(r, &params); err != nil {
 		httpx.Error(w, err, http.StatusBadRequest)
 		return

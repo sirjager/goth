@@ -17,16 +17,16 @@ import (
 	"github.com/sirjager/goth/worker"
 )
 
-// Delete User
+// Authenticated User Delete
 //
-//	@Summary		Delete
+//	@Summary		User Delete
 //	@Description	Initiate Authenticated User Deletion
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Router			/auth/user [delete]
+//	@Router			/api/auth/user [delete]
 //	@Param			code	query	string	false	"code if already have"
-func (s *Server) Delete(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authUserDelete(w http.ResponseWriter, r *http.Request) {
 	user := mw.UserOrPanic(r)
 
 	codeQueryParam := r.URL.Query().Get("code")

@@ -8,69 +8,66 @@ import (
 	"github.com/rakyll/statik/fs"
 
 	mw "github.com/sirjager/goth/middlewares"
-	_ "github.com/sirjager/goth/statik"
+	"github.com/sirjager/goth/statik/docs"
 )
 
 func (s *Server) MountHandlers() {
-	c := chi.NewRouter()
-	defer func() { s.router = c }()
+	mux := chi.NewRouter()
+	defer func() { s.router = mux }()
 
-	c.Use(middleware.RealIP)
-	c.Use(mw.UseCors())
-	c.Use(mw.Logger(s.Modules))
-	c.Use(middleware.Compress(5))
-	c.Use(middleware.Recoverer)
-	c.Use(mw.RequestID(s.Modules))
+	mux.Use(middleware.RealIP)
+	mux.Use(mw.UseCors())
+	mux.Use(mw.Logger(*s.Logger(), s.Config().LoggerLogfile))
+	mux.Use(middleware.Compress(5))
+	mux.Use(middleware.Recoverer)
+	mux.Use(mw.RequestID())
 
-	c.Get("/", s.Welcome)
-	c.Get("/health", s.Health)
-	c.Get(docsPath, s.SwaggerDocs)
-
-	// NOTE: Authentication routes
-	c.Route("/auth", func(r chi.Router) {
-		r.Get("/signin", s.Signin)
-		r.Post("/signup", s.Signup)
-		r.Get("/verify", s.VerifyEmail)
-		r.Post("/reset", s.Reset)
-
-		r.With(mw.RequiresAccessToken(s.Modules), mw.RequiresVerified()).
-			Get("/user", s.AuthUser)
-
-		r.With(mw.RequiresAccessToken(s.Modules), mw.RequiresVerified()).
-			Get("/delete", s.Delete)
-
-		r.With(mw.RequiresRefreshToken(s.Modules), mw.RequiresVerified()).
-			Get("/refresh", s.RefreshToken)
-
-		r.Get("/signout/{provider}", s.Signout)
-		r.Get("/{provider}", s.OAuthProvider)
-		r.Get("/{provider}/callback", s.OAuthCallback)
+	mux.Route("/api", func(r chi.Router) {
+		r.Get("/", s.apiWelcome)
+		r.Get("/health", s.apiHealth)
+		r.Route("/docs", s.docsHandler)
+		r.Route("/auth", s.authHandlers)
+		r.Route("/admin", s.adminHandlers)
 	})
+}
 
-	c.Route("/users", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(s.Modules))
-		r.Use(mw.RequiresVerified())
-		r.Use(mw.RequiresMaster())
-		r.Get("/", s.UsersGet)
-	})
-
-	c.Route("/users/{identity}", func(r chi.Router) {
-		r.Use(mw.RequiresAccessToken(s.Modules))
-		r.Use(mw.RequiresVerified())
-		r.Use(mw.RequiresPermissions())
-
-		r.Get("/", s.UserGet)
-		r.Patch("/", s.UserUpdate)
-	})
-
-	// file server for swagger documentations, it serves only swagger.json
-	// that will be used by scalar docs
-	statikFS, err := fs.New()
+func (s *Server) docsHandler(r chi.Router) {
+	r.Get("/", s.swaggerDocs)
+	docsFS, err := fs.NewWithNamespace(docs.Docs)
 	if err != nil {
 		s.Logger().Fatal().Err(err).Msg("can not statik file server")
 	}
-	swaggerHandler := http.StripPrefix("/docs/", http.FileServer(statikFS))
-	c.Get("/docs/swagger.json", func(w http.ResponseWriter, r *http.Request) {
-		swaggerHandler.ServeHTTP(w, r)
-	})
+	swaggerHandler := http.StripPrefix("/api/docs/", http.FileServer(docsFS))
+	r.Handle("/swagger.json", swaggerHandler)
+}
+
+func (s *Server) authHandlers(r chi.Router) {
+	r.Get("/signin", s.authUserSignIn)
+	r.Post("/signup", s.authUserSignUp)
+	r.Get("/verify", s.authUserVerify)
+	r.Post("/reset", s.authUserResetPassword)
+
+	r.With(mw.RequiresAccessToken(s.App), mw.RequiresVerified()).
+		Get("/user", s.authUserFetch)
+
+	r.With(mw.RequiresAccessToken(s.App), mw.RequiresVerified()).
+		Patch("/user", s.authUserUpdate)
+
+	r.With(mw.RequiresAccessToken(s.App), mw.RequiresVerified()).
+		Get("/delete", s.authUserDelete)
+
+	r.With(mw.RequiresRefreshToken(s.App), mw.RequiresVerified()).
+		Get("/refresh", s.authUserRefreshToken)
+
+	r.Get("/signout/{provider}", s.authUserSignOut)
+	r.Get("/{provider}", s.oauthProvider)
+	r.Get("/{provider}/callback", s.oauthCallback)
+}
+
+func (s *Server) adminHandlers(r chi.Router) {
+	r.Use(mw.RequiresAccessToken(s.App))
+	r.Use(mw.RequiresVerified())
+	r.Use(mw.RequiresMaster())
+	r.Get("/users", s.adminFetchUsers)
+	r.Patch("/users/{identity}", s.adminUpdateUser)
 }
